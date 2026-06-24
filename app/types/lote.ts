@@ -12,37 +12,34 @@ export type LoteData = {
   carcacaFriaReal?: number;
 
   traseiroBoi: number;
+  traseiroCapoteBoi: number;
   dianteiroBoi: number;
   pontaBoi: number;
 
   traseiroVaca: number;
+  traseiroCapoteVaca: number;
   dianteiroVaca: number;
   pontaVaca: number;
-
-  miudos: number;
-  sebo: number;
-
-  // Campo mantido como opcional para compatibilidade com lotes antigos.
-  miudosSebo?: number;
-
-  // Campos usados pelo módulo de miúdos.
-  pesoMiudosRecebido?: number;
-  custoBlocoMiudos?: number;
 
   valorGado: number;
   precoArrobaBoi: number;
   precoArrobaVaca: number;
   frete: number;
-  embalagens: number;
-  etiquetas: number;
+  custoPorCabecaAdicional: number;
+  folhaAbateMensal: number;
+  diasAbateMes: number;
   taxas: number;
   outrosCustos: number;
 
-  indiceTraseiro: number;
-  indiceDianteiro: number;
-  indicePonta: number;
-  indiceMiudos: number;
-  indiceSebo: number;
+  indiceTraseiroBoi: number;
+  indiceTraseiroCapoteBoi: number;
+  indiceDianteiroBoi: number;
+  indicePontaBoi: number;
+
+  indiceTraseiroVaca: number;
+  indiceTraseiroCapoteVaca: number;
+  indiceDianteiroVaca: number;
+  indicePontaVaca: number;
 
   margemPercentual: number;
 

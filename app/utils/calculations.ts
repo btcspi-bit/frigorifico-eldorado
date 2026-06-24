@@ -4,7 +4,21 @@ function safeDiv(value: number, divisor: number) {
   return divisor > 0 ? value / divisor : 0;
 }
 
+function indexValue(primary: number | undefined, legacy: number | undefined, fallback: number) {
+  const primaryValue = Number(primary || 0);
+  if (primaryValue > 0) return primaryValue;
+
+  const legacyValue = Number(legacy || 0);
+  return legacyValue > 0 ? legacyValue : fallback;
+}
+
 export function calculate(data: LoteData) {
+  const legacyData = data as LoteData & {
+    indiceTraseiro?: number;
+    indiceDianteiro?: number;
+    indicePonta?: number;
+  };
+
   const totalCabecas = Number(data.quantidadeBois || 0) + Number(data.quantidadeVacas || 0);
 
   const carcacaQuenteBoi = Number(data.carcacaQuenteBoi || 0);
@@ -29,48 +43,51 @@ export function calculate(data: LoteData) {
   const mediaArrobaGeral = safeDiv(arrobasTotal, totalCabecas);
 
   const producaoTraseiroBoi = Number(data.traseiroBoi || 0);
+  const producaoTraseiroCapoteBoi = Number(data.traseiroCapoteBoi || 0);
   const producaoDianteiroBoi = Number(data.dianteiroBoi || 0);
   const producaoPontaBoi = Number(data.pontaBoi || 0);
 
   const producaoTraseiroVaca = Number(data.traseiroVaca || 0);
+  const producaoTraseiroCapoteVaca = Number(data.traseiroCapoteVaca || 0);
   const producaoDianteiroVaca = Number(data.dianteiroVaca || 0);
   const producaoPontaVaca = Number(data.pontaVaca || 0);
 
   const producaoTraseiro = producaoTraseiroBoi + producaoTraseiroVaca;
+  const producaoTraseiroCapote = producaoTraseiroCapoteBoi + producaoTraseiroCapoteVaca;
   const producaoDianteiro = producaoDianteiroBoi + producaoDianteiroVaca;
   const producaoPonta = producaoPontaBoi + producaoPontaVaca;
-  const producaoMiudos = Number(data.miudos || 0);
-  const producaoSebo = Number(data.sebo || 0);
-
-  const producaoTotal =
+  const producaoCarcacaTotal =
     producaoTraseiro +
+    producaoTraseiroCapote +
     producaoDianteiro +
-    producaoPonta +
-    producaoMiudos +
-    producaoSebo;
+    producaoPonta;
 
-  const aproveitamentoIndustrial = safeDiv(producaoTotal, carcacaFriaTotal) * 100;
+  const producaoTotal = producaoCarcacaTotal;
+
+  const aproveitamentoIndustrial = safeDiv(producaoCarcacaTotal, carcacaFriaTotal) * 100;
 
   const rendimentoTraseiroBoi = safeDiv(producaoTraseiroBoi, carcacaFriaBoi) * 100;
+  const rendimentoTraseiroCapoteBoi = safeDiv(producaoTraseiroCapoteBoi, carcacaFriaBoi) * 100;
   const rendimentoDianteiroBoi = safeDiv(producaoDianteiroBoi, carcacaFriaBoi) * 100;
   const rendimentoPontaBoi = safeDiv(producaoPontaBoi, carcacaFriaBoi) * 100;
 
   const rendimentoTraseiroVaca = safeDiv(producaoTraseiroVaca, carcacaFriaVaca) * 100;
+  const rendimentoTraseiroCapoteVaca = safeDiv(producaoTraseiroCapoteVaca, carcacaFriaVaca) * 100;
   const rendimentoDianteiroVaca = safeDiv(producaoDianteiroVaca, carcacaFriaVaca) * 100;
   const rendimentoPontaVaca = safeDiv(producaoPontaVaca, carcacaFriaVaca) * 100;
 
   const rendimentoTraseiro = safeDiv(producaoTraseiro, carcacaFriaTotal) * 100;
+  const rendimentoTraseiroCapote = safeDiv(producaoTraseiroCapote, carcacaFriaTotal) * 100;
   const rendimentoDianteiro = safeDiv(producaoDianteiro, carcacaFriaTotal) * 100;
   const rendimentoPonta = safeDiv(producaoPonta, carcacaFriaTotal) * 100;
-  const rendimentoMiudos = safeDiv(producaoMiudos, carcacaFriaTotal) * 100;
-  const rendimentoSebo = safeDiv(producaoSebo, carcacaFriaTotal) * 100;
-  const rendimentoMiudosSebo = rendimentoMiudos + rendimentoSebo;
 
   const traseiroMedioBoi = safeDiv(producaoTraseiroBoi, Number(data.quantidadeBois || 0));
+  const traseiroCapoteMedioBoi = safeDiv(producaoTraseiroCapoteBoi, Number(data.quantidadeBois || 0));
   const dianteiroMedioBoi = safeDiv(producaoDianteiroBoi, Number(data.quantidadeBois || 0));
   const pontaMedioBoi = safeDiv(producaoPontaBoi, Number(data.quantidadeBois || 0));
 
   const traseiroMedioVaca = safeDiv(producaoTraseiroVaca, Number(data.quantidadeVacas || 0));
+  const traseiroCapoteMedioVaca = safeDiv(producaoTraseiroCapoteVaca, Number(data.quantidadeVacas || 0));
   const dianteiroMedioVaca = safeDiv(producaoDianteiroVaca, Number(data.quantidadeVacas || 0));
   const pontaMedioVaca = safeDiv(producaoPontaVaca, Number(data.quantidadeVacas || 0));
 
@@ -82,46 +99,73 @@ export function calculate(data: LoteData) {
   const custoGadoConsiderado =
     valorGadoInformado > 0 ? valorGadoInformado : valorGadoPorArroba;
 
+  const custoPorCabecaAdicional = Number(data.custoPorCabecaAdicional || 0);
+  const custoCabecasAdicional = custoPorCabecaAdicional * totalCabecas;
+  const folhaAbateMensal = Number(data.folhaAbateMensal || 0);
+  const diasAbateMes = Number(data.diasAbateMes || 0);
+  const folhaAbateDia = safeDiv(folhaAbateMensal, diasAbateMes);
+  const folhaAbatePorCabeca = safeDiv(folhaAbateDia, totalCabecas);
+  const folhaAbateAplicada = folhaAbatePorCabeca * totalCabecas;
+
   const custoTotal =
     custoGadoConsiderado +
     Number(data.frete || 0) +
-    Number(data.embalagens || 0) +
-    Number(data.etiquetas || 0) +
+    custoCabecasAdicional +
+    folhaAbateAplicada +
     Number(data.taxas || 0) +
     Number(data.outrosCustos || 0);
 
   const custoPorArroba = safeDiv(custoTotal, arrobasTotal);
+  const custoPorCabeca = safeDiv(custoTotal, totalCabecas);
   const custoPorKg = safeDiv(custoTotal, producaoTotal);
 
   const produtos = [
     {
-      nome: "Traseiro",
-      peso: producaoTraseiro,
-      indice: Number(data.indiceTraseiro || 0),
+      nome: "Traseiro Boi",
+      peso: producaoTraseiroBoi,
+      indice: indexValue(data.indiceTraseiroBoi, legacyData.indiceTraseiro, 1.3),
       precifica: true,
     },
     {
-      nome: "Dianteiro",
-      peso: producaoDianteiro,
-      indice: Number(data.indiceDianteiro || 0),
+      nome: "Traseiro Capote de Boi",
+      peso: producaoTraseiroCapoteBoi,
+      indice: indexValue(data.indiceTraseiroCapoteBoi, legacyData.indiceTraseiro, 1.3),
       precifica: true,
     },
     {
-      nome: "Ponta de Agulha",
-      peso: producaoPonta,
-      indice: Number(data.indicePonta || 0),
+      nome: "Dianteiro Boi",
+      peso: producaoDianteiroBoi,
+      indice: indexValue(data.indiceDianteiroBoi, legacyData.indiceDianteiro, 0.9),
       precifica: true,
     },
     {
-      nome: "Miúdos",
-      peso: producaoMiudos,
-      indice: Number(data.indiceMiudos || 0),
-      precifica: false,
+      nome: "Ponta de Agulha Boi",
+      peso: producaoPontaBoi,
+      indice: indexValue(data.indicePontaBoi, legacyData.indicePonta, 0.8),
+      precifica: true,
     },
     {
-      nome: "Sebo",
-      peso: producaoSebo,
-      indice: Number(data.indiceSebo || 0),
+      nome: "Traseiro Vaca",
+      peso: producaoTraseiroVaca,
+      indice: indexValue(data.indiceTraseiroVaca, legacyData.indiceTraseiro, 1.3),
+      precifica: true,
+    },
+    {
+      nome: "Traseiro Capote de Vaca",
+      peso: producaoTraseiroCapoteVaca,
+      indice: indexValue(data.indiceTraseiroCapoteVaca, legacyData.indiceTraseiro, 1.3),
+      precifica: true,
+    },
+    {
+      nome: "Dianteiro Vaca",
+      peso: producaoDianteiroVaca,
+      indice: indexValue(data.indiceDianteiroVaca, legacyData.indiceDianteiro, 0.9),
+      precifica: true,
+    },
+    {
+      nome: "Ponta de Agulha Vaca",
+      peso: producaoPontaVaca,
+      indice: indexValue(data.indicePontaVaca, legacyData.indicePonta, 0.8),
       precifica: true,
     },
   ];
@@ -166,8 +210,6 @@ export function calculate(data: LoteData) {
     0
   );
 
-  const custoMiudos = produtosCalculados.find((produto) => produto.nome === "Miúdos")?.custoDistribuido || 0;
-
   const lucroPrevisto = receitaPrevista - custoProdutosPrecificados;
   const margemPrevista = safeDiv(lucroPrevisto, receitaPrevista) * 100;
 
@@ -191,47 +233,54 @@ export function calculate(data: LoteData) {
     mediaArrobaGeral,
 
     producaoTraseiroBoi,
+    producaoTraseiroCapoteBoi,
     producaoDianteiroBoi,
     producaoPontaBoi,
     producaoTraseiroVaca,
+    producaoTraseiroCapoteVaca,
     producaoDianteiroVaca,
     producaoPontaVaca,
     producaoTraseiro,
+    producaoTraseiroCapote,
     producaoDianteiro,
     producaoPonta,
-    producaoMiudos,
-    producaoSebo,
-    producaoMiudosSebo: producaoMiudos + producaoSebo,
+    producaoCarcacaTotal,
     producaoTotal,
 
     aproveitamentoIndustrial,
 
     rendimentoTraseiroBoi,
+    rendimentoTraseiroCapoteBoi,
     rendimentoDianteiroBoi,
     rendimentoPontaBoi,
     rendimentoTraseiroVaca,
+    rendimentoTraseiroCapoteVaca,
     rendimentoDianteiroVaca,
     rendimentoPontaVaca,
     rendimentoTraseiro,
+    rendimentoTraseiroCapote,
     rendimentoDianteiro,
     rendimentoPonta,
-    rendimentoMiudos,
-    rendimentoSebo,
-    rendimentoMiudosSebo,
 
     traseiroMedioBoi,
+    traseiroCapoteMedioBoi,
     dianteiroMedioBoi,
     pontaMedioBoi,
     traseiroMedioVaca,
+    traseiroCapoteMedioVaca,
     dianteiroMedioVaca,
     pontaMedioVaca,
 
     valorGadoPorArroba,
     custoGadoConsiderado,
+    custoCabecasAdicional,
+    folhaAbateDia,
+    folhaAbatePorCabeca,
+    folhaAbateAplicada,
     custoTotal,
     custoPorArroba,
+    custoPorCabeca,
     custoPorKg,
-    custoMiudos,
 
     produtosCalculados,
 

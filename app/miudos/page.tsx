@@ -9,7 +9,7 @@ type ProdutoKey =
   | "figado"
   | "coracao"
   | "lingua"
-  | "rinsoes"
+  | "rins"
   | "bucho"
   | "mocoto"
   | "rabada"
@@ -49,7 +49,7 @@ const PRODUTOS: { key: ProdutoKey; nome: string; indicePadrao: number }[] = [
   { key: "figado", nome: "Fígado", indicePadrao: 1 },
   { key: "coracao", nome: "Coração", indicePadrao: 1.1 },
   { key: "lingua", nome: "Língua", indicePadrao: 2.5 },
-  { key: "rinsoes", nome: "Rins", indicePadrao: 0.8 },
+  { key: "rins", nome: "Rins", indicePadrao: 0.8 },
   { key: "bucho", nome: "Bucho", indicePadrao: 0.7 },
   { key: "mocoto", nome: "Mocotó", indicePadrao: 0.9 },
   { key: "rabada", nome: "Rabada", indicePadrao: 2 },
@@ -60,7 +60,7 @@ const initialPesos: Record<ProdutoKey, number> = {
   figado: 0,
   coracao: 0,
   lingua: 0,
-  rinsoes: 0,
+  rins: 0,
   bucho: 0,
   mocoto: 0,
   rabada: 0,
@@ -71,7 +71,7 @@ const initialIndices: Record<ProdutoKey, number> = {
   figado: 1,
   coracao: 1.1,
   lingua: 2.5,
-  rinsoes: 0.8,
+  rins: 0.8,
   bucho: 0.7,
   mocoto: 0.9,
   rabada: 2,
@@ -82,7 +82,7 @@ const initialMargens: Record<ProdutoKey, number> = {
   figado: 20,
   coracao: 20,
   lingua: 20,
-  rinsoes: 20,
+  rins: 20,
   bucho: 20,
   mocoto: 20,
   rabada: 20,
@@ -140,7 +140,7 @@ function editBrazilianNumber(value: number, decimals = 2) {
   if (!Number(value || 0)) return "";
 
   return Number(value || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
 }
@@ -363,6 +363,7 @@ export default function MiudosPage() {
   const [indices, setIndices] = useState<Record<ProdutoKey, number>>(initialIndices);
   const [margens, setMargens] = useState<Record<ProdutoKey, number>>(initialMargens);
   const [custos, setCustos] = useState<Record<CustosKey, number>>(initialCustos);
+  const [pesoRecebidoManual, setPesoRecebidoManual] = useState(0);
   const [observacoes, setObservacoes] = useState("");
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
 
@@ -374,7 +375,11 @@ export default function MiudosPage() {
         const lotes = JSON.parse(saved);
 
         if (Array.isArray(lotes) && lotes.length > 0) {
-          setLote(lotes[0]);
+          const loteAtual = lotes[0];
+          setLote(loteAtual);
+          setPesoRecebidoManual(
+            Number(loteAtual?.pesoMiudosRecebido || loteAtual?.miudos || 0)
+          );
         }
       } catch {
         setLote(null);
@@ -397,7 +402,7 @@ export default function MiudosPage() {
   const carcacaQuenteTotal =
     Number(lote?.carcacaQuenteTotal || 0) ||
     Number(lote?.carcacaQuenteBoi || 0) + Number(lote?.carcacaQuenteVaca || 0);
-  const pesoRecebido = Number(lote?.pesoMiudosRecebido || lote?.miudos || 0);
+  const pesoRecebido = Number(pesoRecebidoManual || 0);
   const custoHerdado = Number(lote?.custoBlocoMiudos || 0);
   const custoKgBruto = pesoRecebido > 0 ? custoHerdado / pesoRecebido : 0;
 
@@ -411,14 +416,18 @@ export default function MiudosPage() {
   const aproveitamento = pesoRecebido > 0 ? (pesoInformado / pesoRecebido) * 100 : 0;
 
   const statusPeso =
-    Math.abs(diferenca) === 0
+    pesoRecebido <= 0
+      ? "PENDENTE"
+      : Math.abs(diferenca) === 0
       ? "FECHADO"
       : Math.abs(diferenca) <= pesoRecebido * 0.02
         ? "ATENÇÃO"
         : "DIVERGENTE";
 
   const statusClass =
-    Math.abs(diferenca) === 0
+    pesoRecebido <= 0
+      ? "border-amber-300 bg-amber-50 text-amber-800"
+      : Math.abs(diferenca) === 0
       ? "border-emerald-300 bg-emerald-50 text-emerald-800"
       : Math.abs(diferenca) <= pesoRecebido * 0.02
         ? "border-amber-300 bg-amber-50 text-amber-800"
@@ -570,12 +579,21 @@ export default function MiudosPage() {
 
             <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
               <Section title="Produção dos Miúdos">
+                <div className="mb-4 max-w-sm">
+                  <NumericInput
+                    label="Peso recebido dos miúdos"
+                    value={pesoRecebidoManual}
+                    suffix="kg"
+                    onChange={setPesoRecebidoManual}
+                  />
+                </div>
                 <div className="grid gap-3 md:grid-cols-4">
                   {PRODUTOS.map((produto) => (
                     <NumericInput
                       key={produto.key}
-                      label={`${produto.nome} (kg)`}
+                      label={produto.nome}
                       value={pesos[produto.key]}
+                      suffix="kg"
                       onChange={(value) => updatePeso(produto.key, value)}
                     />
                   ))}

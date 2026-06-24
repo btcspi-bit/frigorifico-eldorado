@@ -22,35 +22,102 @@ const initialState: LoteData = {
   carcacaFriaReal: 0,
 
   traseiroBoi: 0,
+  traseiroCapoteBoi: 0,
   dianteiroBoi: 0,
   pontaBoi: 0,
 
   traseiroVaca: 0,
+  traseiroCapoteVaca: 0,
   dianteiroVaca: 0,
   pontaVaca: 0,
-
-  miudos: 0,
-  sebo: 0,
 
   valorGado: 0,
   precoArrobaBoi: 0,
   precoArrobaVaca: 0,
   frete: 0,
-  embalagens: 0,
-  etiquetas: 0,
+  custoPorCabecaAdicional: 0,
+  folhaAbateMensal: 0,
+  diasAbateMes: 0,
   taxas: 0,
   outrosCustos: 0,
 
-  indiceTraseiro: 1.3,
-  indiceDianteiro: 0.9,
-  indicePonta: 0.8,
-  indiceMiudos: 0.3,
-  indiceSebo: 0.1,
+  indiceTraseiroBoi: 1.3,
+  indiceTraseiroCapoteBoi: 1.3,
+  indiceDianteiroBoi: 0.9,
+  indicePontaBoi: 0.8,
+
+  indiceTraseiroVaca: 1.3,
+  indiceTraseiroCapoteVaca: 1.3,
+  indiceDianteiroVaca: 0.9,
+  indicePontaVaca: 0.8,
 
   margemPercentual: 20,
 
   observacoes: "",
 };
+
+type LegacyLoteData = Partial<LoteData> & {
+  indiceTraseiro?: number;
+  indiceDianteiro?: number;
+  indicePonta?: number;
+};
+
+function positiveNumber(...values: Array<number | undefined>) {
+  for (const value of values) {
+    const numberValue = Number(value || 0);
+    if (numberValue > 0) return numberValue;
+  }
+
+  return 0;
+}
+
+function normalizeLoteData(lote: LegacyLoteData): LoteData {
+  const merged = { ...initialState, ...lote };
+
+  return {
+    ...merged,
+    indiceTraseiroBoi: positiveNumber(
+      lote.indiceTraseiroBoi,
+      lote.indiceTraseiro,
+      initialState.indiceTraseiroBoi
+    ),
+    indiceTraseiroCapoteBoi: positiveNumber(
+      lote.indiceTraseiroCapoteBoi,
+      lote.indiceTraseiro,
+      initialState.indiceTraseiroCapoteBoi
+    ),
+    indiceDianteiroBoi: positiveNumber(
+      lote.indiceDianteiroBoi,
+      lote.indiceDianteiro,
+      initialState.indiceDianteiroBoi
+    ),
+    indicePontaBoi: positiveNumber(
+      lote.indicePontaBoi,
+      lote.indicePonta,
+      initialState.indicePontaBoi
+    ),
+    indiceTraseiroVaca: positiveNumber(
+      lote.indiceTraseiroVaca,
+      lote.indiceTraseiro,
+      initialState.indiceTraseiroVaca
+    ),
+    indiceTraseiroCapoteVaca: positiveNumber(
+      lote.indiceTraseiroCapoteVaca,
+      lote.indiceTraseiro,
+      initialState.indiceTraseiroCapoteVaca
+    ),
+    indiceDianteiroVaca: positiveNumber(
+      lote.indiceDianteiroVaca,
+      lote.indiceDianteiro,
+      initialState.indiceDianteiroVaca
+    ),
+    indicePontaVaca: positiveNumber(
+      lote.indicePontaVaca,
+      lote.indicePonta,
+      initialState.indicePontaVaca
+    ),
+  };
+}
 
 function brMoney(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -93,7 +160,7 @@ function formatBrazilianNumber(value: number, decimals = 2) {
 function editBrazilianNumber(value: number, decimals = 2) {
   if (!Number(value || 0)) return "";
   return Number(value || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
 }
@@ -276,7 +343,7 @@ export default function Home() {
 
     try {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) setSavedLots(parsed);
+      if (Array.isArray(parsed)) setSavedLots(parsed.map((lot) => normalizeLoteData(lot)));
     } catch {
       setSavedLots([]);
     }
@@ -288,18 +355,11 @@ export default function Home() {
 
   function saveCurrentLot() {
     const lotName = form.numeroLote.trim() || `Lote ${new Date().toLocaleString("pt-BR")}`;
-    const miudosProduto = calc.produtosCalculados.find(
-      (item) => item.nome === "Miúdos"
-    );
 
-    const lotToSave = {
+    const lotToSave = normalizeLoteData({
       ...form,
       numeroLote: lotName,
-      miudos: form.miudos,
-      sebo: form.sebo,
-      pesoMiudosRecebido: form.miudos,
-      custoBlocoMiudos: Number(miudosProduto?.custoDistribuido || 0),
-    };
+    });
 
     const next = [lotToSave, ...savedLots.filter((lot) => lot.numeroLote !== lotName)];
     setSavedLots(next);
@@ -311,12 +371,7 @@ export default function Home() {
   function openSelectedLot() {
     const lot = savedLots.find((item) => item.numeroLote === selectedLot);
     if (!lot) return;
-    setForm({
-      ...initialState,
-      ...lot,
-      miudos: Number(lot.miudos || lot.miudosSebo || 0),
-      sebo: Number(lot.sebo || 0),
-    });
+    setForm(normalizeLoteData(lot));
   }
 
   function deleteSelectedLot() {
@@ -326,17 +381,15 @@ export default function Home() {
     setSelectedLot("");
   }
 
-  function processarMiudos() {
-    saveCurrentLot();
-    window.location.href = "/miudos";
-  }
-
   const produtosForm = [
-    { indiceKey: "indiceTraseiro" as const },
-    { indiceKey: "indiceDianteiro" as const },
-    { indiceKey: "indicePonta" as const },
-    { indiceKey: "indiceMiudos" as const },
-    { indiceKey: "indiceSebo" as const },
+    { indiceKey: "indiceTraseiroBoi" as const, defaultValue: initialState.indiceTraseiroBoi },
+    { indiceKey: "indiceTraseiroCapoteBoi" as const, defaultValue: initialState.indiceTraseiroCapoteBoi },
+    { indiceKey: "indiceDianteiroBoi" as const, defaultValue: initialState.indiceDianteiroBoi },
+    { indiceKey: "indicePontaBoi" as const, defaultValue: initialState.indicePontaBoi },
+    { indiceKey: "indiceTraseiroVaca" as const, defaultValue: initialState.indiceTraseiroVaca },
+    { indiceKey: "indiceTraseiroCapoteVaca" as const, defaultValue: initialState.indiceTraseiroCapoteVaca },
+    { indiceKey: "indiceDianteiroVaca" as const, defaultValue: initialState.indiceDianteiroVaca },
+    { indiceKey: "indicePontaVaca" as const, defaultValue: initialState.indicePontaVaca },
   ];
 
   return (
@@ -379,16 +432,16 @@ export default function Home() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="mb-3 font-black text-emerald-950">Bois</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                <NumericInput label="Quantidade de bois" value={form.quantidadeBois} integer onChange={(v) => update("quantidadeBois", v)} />
-                <NumericInput label="Carcaça quente bois (kg)" value={form.carcacaQuenteBoi} onChange={(v) => update("carcacaQuenteBoi", v)} />
+                <NumericInput label="Quantidade de bois" value={form.quantidadeBois} integer suffix="cab." onChange={(v) => update("quantidadeBois", v)} />
+                <NumericInput label="Carcaça quente bois" value={form.carcacaQuenteBoi} suffix="kg" onChange={(v) => update("carcacaQuenteBoi", v)} />
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="mb-3 font-black text-emerald-950">Vacas</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                <NumericInput label="Quantidade de vacas" value={form.quantidadeVacas} integer onChange={(v) => update("quantidadeVacas", v)} />
-                <NumericInput label="Carcaça quente vacas (kg)" value={form.carcacaQuenteVaca} onChange={(v) => update("carcacaQuenteVaca", v)} />
+                <NumericInput label="Quantidade de vacas" value={form.quantidadeVacas} integer suffix="cab." onChange={(v) => update("quantidadeVacas", v)} />
+                <NumericInput label="Carcaça quente vacas" value={form.carcacaQuenteVaca} suffix="kg" onChange={(v) => update("carcacaQuenteVaca", v)} />
               </div>
             </div>
           </div>
@@ -412,12 +465,12 @@ export default function Home() {
 
         <Section title="Arrobas">
           <div className="grid gap-3 md:grid-cols-7">
-            <SmallCard label="Arrobas bois" value={brNumber(calc.arrobasBoi)} />
-            <SmallCard label="Arrobas vacas" value={brNumber(calc.arrobasVaca)} />
-            <SmallCard label="Arrobas totais" value={brNumber(calc.arrobasTotal)} />
-            <SmallCard label="Média @ boi" value={brNumber(calc.mediaArrobaBoi)} />
-            <SmallCard label="Média @ vaca" value={brNumber(calc.mediaArrobaVaca)} />
-            <SmallCard label="Média @ geral" value={brNumber(calc.mediaArrobaGeral)} />
+            <SmallCard label="Arrobas bois" value={`${brNumber(calc.arrobasBoi)} @`} />
+            <SmallCard label="Arrobas vacas" value={`${brNumber(calc.arrobasVaca)} @`} />
+            <SmallCard label="Arrobas totais" value={`${brNumber(calc.arrobasTotal)} @`} />
+            <SmallCard label="Média @ boi" value={`${brNumber(calc.mediaArrobaBoi)} @`} />
+            <SmallCard label="Média @ vaca" value={`${brNumber(calc.mediaArrobaVaca)} @`} />
+            <SmallCard label="Média @ geral" value={`${brNumber(calc.mediaArrobaGeral)} @`} />
             <SmallCard label="Custo/@" value={brMoney(calc.custoPorArroba)} />
           </div>
         </Section>
@@ -426,26 +479,28 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Boi</h3>
-              <NumericInput label="Traseiro boi (kg)" value={form.traseiroBoi} onChange={(v) => update("traseiroBoi", v)} />
-              <NumericInput label="Dianteiro boi (kg)" value={form.dianteiroBoi} onChange={(v) => update("dianteiroBoi", v)} />
-              <NumericInput label="Ponta de Agulha boi (kg)" value={form.pontaBoi} onChange={(v) => update("pontaBoi", v)} />
+              <NumericInput label="Traseiro boi" value={form.traseiroBoi} suffix="kg" onChange={(v) => update("traseiroBoi", v)} />
+              <NumericInput label="Traseiro capote de boi" value={form.traseiroCapoteBoi} suffix="kg" onChange={(v) => update("traseiroCapoteBoi", v)} />
+              <NumericInput label="Dianteiro boi" value={form.dianteiroBoi} suffix="kg" onChange={(v) => update("dianteiroBoi", v)} />
+              <NumericInput label="Ponta de Agulha boi" value={form.pontaBoi} suffix="kg" onChange={(v) => update("pontaBoi", v)} />
             </div>
 
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Vaca</h3>
-              <NumericInput label="Traseiro vaca (kg)" value={form.traseiroVaca} onChange={(v) => update("traseiroVaca", v)} />
-              <NumericInput label="Dianteiro vaca (kg)" value={form.dianteiroVaca} onChange={(v) => update("dianteiroVaca", v)} />
-              <NumericInput label="Ponta de Agulha vaca (kg)" value={form.pontaVaca} onChange={(v) => update("pontaVaca", v)} />
+              <NumericInput label="Traseiro vaca" value={form.traseiroVaca} suffix="kg" onChange={(v) => update("traseiroVaca", v)} />
+              <NumericInput label="Traseiro capote de vaca" value={form.traseiroCapoteVaca} suffix="kg" onChange={(v) => update("traseiroCapoteVaca", v)} />
+              <NumericInput label="Dianteiro vaca" value={form.dianteiroVaca} suffix="kg" onChange={(v) => update("dianteiroVaca", v)} />
+              <NumericInput label="Ponta de Agulha vaca" value={form.pontaVaca} suffix="kg" onChange={(v) => update("pontaVaca", v)} />
             </div>
 
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Geral</h3>
-              <NumericInput label="Miúdos (kg)" value={form.miudos} onChange={(v) => update("miudos", v)} />
-              <NumericInput label="Sebo (kg)" value={form.sebo} onChange={(v) => update("sebo", v)} />
               <ResultLine label="Traseiro total" value={`${brNumber(calc.producaoTraseiro)} kg`} />
+              <ResultLine label="Capote de boi" value={`${brNumber(calc.producaoTraseiroCapoteBoi)} kg`} />
+              <ResultLine label="Capote de vaca" value={`${brNumber(calc.producaoTraseiroCapoteVaca)} kg`} />
               <ResultLine label="Dianteiro total" value={`${brNumber(calc.producaoDianteiro)} kg`} />
               <ResultLine label="Ponta total" value={`${brNumber(calc.producaoPonta)} kg`} />
-              <ResultLine label="Produção total" value={`${brNumber(calc.producaoTotal)} kg`} />
+              <ResultLine label="Produção total dos cortes" value={`${brNumber(calc.producaoCarcacaTotal)} kg`} />
             </div>
           </div>
         </Section>
@@ -453,15 +508,17 @@ export default function Home() {
         <Section title="Rendimentos">
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Boi</h3>
+              <h3 className="mb-2 font-black text-emerald-950">Boi - base fria</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiroBoi)} />
+              <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapoteBoi)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiroBoi)} />
               <ResultLine label="Rend. ponta" value={brPercent(calc.rendimentoPontaBoi)} />
             </div>
 
             <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Vaca</h3>
+              <h3 className="mb-2 font-black text-emerald-950">Vaca - base fria</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiroVaca)} />
+              <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapoteVaca)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiroVaca)} />
               <ResultLine label="Rend. ponta" value={brPercent(calc.rendimentoPontaVaca)} />
             </div>
@@ -469,11 +526,10 @@ export default function Home() {
             <div className="rounded-xl border bg-slate-50 p-4">
               <h3 className="mb-2 font-black text-emerald-950">Geral</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiro)} />
+              <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapote)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiro)} />
               <ResultLine label="Rend. ponta" value={brPercent(calc.rendimentoPonta)} />
-              <ResultLine label="Rend. miúdos" value={brPercent(calc.rendimentoMiudos)} />
-              <ResultLine label="Rend. sebo" value={brPercent(calc.rendimentoSebo)} />
-              <ResultLine label="Aproveitamento" value={brPercent(calc.aproveitamentoIndustrial)} />
+              <ResultLine label="Aproveitamento cortes" value={brPercent(calc.aproveitamentoIndustrial)} />
             </div>
           </div>
         </Section>
@@ -484,6 +540,7 @@ export default function Home() {
               <h3 className="mb-2 font-black text-emerald-950">Boi</h3>
               <ResultLine label="Carcaça média" value={`${brNumber(calc.pesoMedioBoi)} kg`} />
               <ResultLine label="Traseiro médio" value={`${brNumber(calc.traseiroMedioBoi)} kg`} />
+              <ResultLine label="Capote médio" value={`${brNumber(calc.traseiroCapoteMedioBoi)} kg`} />
               <ResultLine label="Dianteiro médio" value={`${brNumber(calc.dianteiroMedioBoi)} kg`} />
               <ResultLine label="Ponta média" value={`${brNumber(calc.pontaMedioBoi)} kg`} />
             </div>
@@ -492,6 +549,7 @@ export default function Home() {
               <h3 className="mb-2 font-black text-emerald-950">Vaca</h3>
               <ResultLine label="Carcaça média" value={`${brNumber(calc.pesoMedioVaca)} kg`} />
               <ResultLine label="Traseiro médio" value={`${brNumber(calc.traseiroMedioVaca)} kg`} />
+              <ResultLine label="Capote médio" value={`${brNumber(calc.traseiroCapoteMedioVaca)} kg`} />
               <ResultLine label="Dianteiro médio" value={`${brNumber(calc.dianteiroMedioVaca)} kg`} />
               <ResultLine label="Ponta média" value={`${brNumber(calc.pontaMedioVaca)} kg`} />
             </div>
@@ -504,15 +562,18 @@ export default function Home() {
             <MoneyInput label="Preço @ boi" value={form.precoArrobaBoi} onChange={(v) => update("precoArrobaBoi", v)} />
             <MoneyInput label="Preço @ vaca" value={form.precoArrobaVaca} onChange={(v) => update("precoArrobaVaca", v)} />
             <MoneyInput label="Frete" value={form.frete} onChange={(v) => update("frete", v)} />
-            <MoneyInput label="Embalagens" value={form.embalagens} onChange={(v) => update("embalagens", v)} />
-            <MoneyInput label="Etiquetas" value={form.etiquetas} onChange={(v) => update("etiquetas", v)} />
             <MoneyInput label="Taxas" value={form.taxas} onChange={(v) => update("taxas", v)} />
             <MoneyInput label="Outros custos" value={form.outrosCustos} onChange={(v) => update("outrosCustos", v)} />
+            <MoneyInput label="Custo por cabeça" value={form.custoPorCabecaAdicional} onChange={(v) => update("custoPorCabecaAdicional", v)} />
+            <MoneyInput label="Folha do abate mensal" value={form.folhaAbateMensal} onChange={(v) => update("folhaAbateMensal", v)} />
+            <NumericInput label="Dias de abate no mês" value={form.diasAbateMes} integer suffix="dias" onChange={(v) => update("diasAbateMes", v)} />
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <SmallCard label="Custo do gado" value={brMoney(calc.custoGadoConsiderado)} />
             <SmallCard label="Custo total do lote" value={brMoney(calc.custoTotal)} />
+            <SmallCard label="Custo total / cabeça" value={brMoney(calc.custoPorCabeca)} />
+            <SmallCard label="Folha / cabeça" value={brMoney(calc.folhaAbatePorCabeca)} />
             <SmallCard label="Custo por arroba" value={brMoney(calc.custoPorArroba)} />
             <SmallCard label="Custo por kg produzido" value={brMoney(calc.custoPorKg)} />
           </div>
@@ -527,7 +588,7 @@ export default function Home() {
               onChange={(v) => update("margemPercentual", v)}
             />
             <div className="rounded-xl border border-emerald-950/20 bg-emerald-50 p-3 text-sm font-semibold text-emerald-950">
-              Este bloco estima preço mínimo sugerido para estudo interno do PCP. Miúdos entram como custo/peso para posterior detalhamento no módulo próprio.
+              Este bloco estima preço mínimo sugerido para estudo interno do PCP com base apenas nos cortes de carcaça.
             </div>
           </div>
 
@@ -557,21 +618,17 @@ export default function Home() {
                       <td className="p-2">
                         <NumericInput
                           label=""
-                          value={form[formProduto.indiceKey]}
+                          value={Number(form[formProduto.indiceKey] || 0) > 0 ? form[formProduto.indiceKey] : formProduto.defaultValue}
                           onChange={(v) => update(formProduto.indiceKey, v)}
                         />
                       </td>
                       <td className="p-3 text-right font-bold">{brMoney(produto.custoDistribuido)}</td>
                       <td className="p-3 text-right font-bold">{brMoney(produto.custoKg)}</td>
                       <td className="p-3 text-right font-black text-emerald-800">
-                        {produto.precifica ? brMoney(produto.precoSugerido) : "Módulo miúdos"}
+                        {brMoney(produto.precoSugerido)}
                       </td>
-                      <td className="p-3 text-right font-bold">
-                        {produto.precifica ? brMoney(produto.receitaPrevista) : "-"}
-                      </td>
-                      <td className="p-3 text-right font-bold">
-                        {produto.precifica ? brMoney(produto.lucroPrevisto) : "-"}
-                      </td>
+                      <td className="p-3 text-right font-bold">{brMoney(produto.receitaPrevista)}</td>
+                      <td className="p-3 text-right font-bold">{brMoney(produto.lucroPrevisto)}</td>
                     </tr>
                   );
                 })}
@@ -647,9 +704,6 @@ export default function Home() {
               Excluir lote
             </button>
 
-            <button onClick={processarMiudos} className="rounded-xl bg-emerald-950 px-4 py-2 text-sm font-bold text-white">
-              Processar miúdos
-            </button>
           </div>
 
           <button
