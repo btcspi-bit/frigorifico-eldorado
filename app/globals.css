@@ -24,3 +24,190 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .report-page {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10px;
+    padding: 0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .report-wrapper {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .report-screen-only {
+    display: none !important;
+  }
+
+  .report-header {
+    border: 0 !important;
+    border-bottom: 3px solid #064e3b !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 0 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .report-header h1 {
+    font-size: 22px !important;
+    line-height: 1.1 !important;
+    margin: 2px 0 0 !important;
+  }
+
+  .report-meta {
+    display: flex !important;
+    gap: 18px !important;
+    margin-top: 8px !important;
+    color: #374151 !important;
+    font-size: 9px !important;
+  }
+
+  .report-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin: 8px 0 !important;
+  }
+
+  .report-metric {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    padding: 6px 7px !important;
+  }
+
+  .report-metric div:first-child {
+    font-size: 7.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .report-metric div:nth-child(2) {
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+  }
+
+  .report-two-col {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .report-summary > div {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .report-summary > div > div {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    padding: 7px 8px !important;
+  }
+
+  .report-summary > div > div > div:first-child {
+    color: #475569 !important;
+    font-size: 8px !important;
+  }
+
+  .report-summary > div > div > div:last-child {
+    color: #064e3b !important;
+    font-size: 15px !important;
+    margin-top: 3px !important;
+  }
+
+  .report-page section {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 10px !important;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .report-page section h2 {
+    border-bottom: 1.5px solid #064e3b !important;
+    color: #064e3b !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    margin: 0 0 7px !important;
+    padding: 0 0 4px !important;
+    break-after: avoid;
+  }
+
+  .report-page .rounded-xl,
+  .report-page .rounded-2xl {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+  }
+
+  .report-page .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .report-page table {
+    border-collapse: collapse !important;
+    font-size: 8.5px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .report-page thead tr,
+  .report-page tr.bg-emerald-950 {
+    background: #064e3b !important;
+    color: #ffffff !important;
+  }
+
+  .report-page th,
+  .report-page td {
+    border: 1px solid #d1d5db !important;
+    padding: 4px 5px !important;
+  }
+
+  .report-page tr {
+    break-inside: avoid;
+  }
+
+  .report-page p,
+  .report-page span,
+  .report-page strong,
+  .report-page td,
+  .report-page th {
+    line-height: 1.25 !important;
+  }
+
+  .report-page .grid {
+    gap: 6px !important;
+  }
+
+  .report-page .p-4,
+  .report-page .p-5 {
+    padding: 7px !important;
+  }
+
+  .report-page .report-footer {
+    border-top: 1px solid #cbd5e1;
+    color: #475569 !important;
+    font-size: 8px !important;
+    margin-top: 8px !important;
+    padding-top: 6px !important;
+    text-align: center !important;
+  }
+}

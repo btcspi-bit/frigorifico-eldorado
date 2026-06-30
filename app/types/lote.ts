@@ -21,6 +21,11 @@ export type LoteData = {
   dianteiroVaca: number;
   pontaVaca: number;
 
+  miudos: number;
+
+  // Peso usado pelo módulo de miúdos. O custo dos miúdos não é calculado em separado.
+  pesoMiudosRecebido?: number;
+
   valorGado: number;
   precoArrobaBoi: number;
   precoArrobaVaca: number;
@@ -31,17 +36,12 @@ export type LoteData = {
   taxas: number;
   outrosCustos: number;
 
-  indiceTraseiroBoi: number;
+  indiceTraseiro: number;
   indiceTraseiroCapoteBoi: number;
-  indiceDianteiroBoi: number;
-  indicePontaBoi: number;
-
-  indiceTraseiroVaca: number;
   indiceTraseiroCapoteVaca: number;
-  indiceDianteiroVaca: number;
-  indicePontaVaca: number;
-
-  margemPercentual: number;
+  indiceDianteiro: number;
+  indicePonta: number;
+  indiceMiudos: number;
 
   observacoes: string;
 };

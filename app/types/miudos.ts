@@ -1,69 +1,27 @@
+import type { MiudosProdutoKey } from "../utils/miudosProducts";
+
+export type MiudosPesos = Partial<Record<MiudosProdutoKey, number>>;
+
 export interface MiudosData {
   data: string;
   numeroLote: string;
 
   quantidadeBois?: number;
   quantidadeVacas?: number;
+  carcacaQuenteTotal?: number;
 
   pesoRecebido: number;
-  custoHerdado: number;
-
-  figado: number;
-  coracao: number;
-  lingua: number;
-  rins: number;
-  bucho: number;
-  mocoto: number;
-  rabada: number;
-  outros: number;
-
-  embalagens: number;
-  etiquetas: number;
-  caixas: number;
-  maoObra: number;
-  outrosCustos: number;
-
-  indiceFigado: number;
-  indiceCoracao: number;
-  indiceLingua: number;
-  indiceRins: number;
-  indiceBucho: number;
-  indiceMocoto: number;
-  indiceRabada: number;
-  indiceOutros: number;
-
-  margemFigado: number;
-  margemCoracao: number;
-  margemLingua: number;
-  margemRins: number;
-  margemBucho: number;
-  margemMocoto: number;
-  margemRabada: number;
-  margemOutros: number;
-
+  pesos?: MiudosPesos;
   observacoes: string;
+
+  [key: string]: string | number | MiudosPesos | undefined;
 }
 
 export type MiudosProdutoCalculado = {
-  key:
-    | "figado"
-    | "coracao"
-    | "lingua"
-    | "rins"
-    | "bucho"
-    | "mocoto"
-    | "rabada"
-    | "outros";
+  key: MiudosProdutoKey;
   nome: string;
   peso: number;
-  indice: number;
-  margem: number;
   rendimento: number;
+  rendimentoCarcacaQuente: number;
   kgPorCabeca: number;
-  custoDistribuido: number;
-  custoKg: number;
-  precoSugerido: number;
-  receitaPrevista: number;
-  lucroPrevisto: number;
-  margemReal: number;
 };

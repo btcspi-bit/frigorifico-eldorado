@@ -34,7 +34,7 @@ function editBrazilianNumber(value: number, decimals = 2) {
   if (!Number(value || 0)) return "";
 
   return Number(value || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   });
 }

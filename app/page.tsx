@@ -31,6 +31,8 @@ const initialState: LoteData = {
   dianteiroVaca: 0,
   pontaVaca: 0,
 
+  miudos: 0,
+
   valorGado: 0,
   precoArrobaBoi: 0,
   precoArrobaVaca: 0,
@@ -41,83 +43,15 @@ const initialState: LoteData = {
   taxas: 0,
   outrosCustos: 0,
 
-  indiceTraseiroBoi: 1.3,
+  indiceTraseiro: 1.3,
   indiceTraseiroCapoteBoi: 1.3,
-  indiceDianteiroBoi: 0.9,
-  indicePontaBoi: 0.8,
-
-  indiceTraseiroVaca: 1.3,
   indiceTraseiroCapoteVaca: 1.3,
-  indiceDianteiroVaca: 0.9,
-  indicePontaVaca: 0.8,
-
-  margemPercentual: 20,
+  indiceDianteiro: 0.9,
+  indicePonta: 0.8,
+  indiceMiudos: 0.3,
 
   observacoes: "",
 };
-
-type LegacyLoteData = Partial<LoteData> & {
-  indiceTraseiro?: number;
-  indiceDianteiro?: number;
-  indicePonta?: number;
-};
-
-function positiveNumber(...values: Array<number | undefined>) {
-  for (const value of values) {
-    const numberValue = Number(value || 0);
-    if (numberValue > 0) return numberValue;
-  }
-
-  return 0;
-}
-
-function normalizeLoteData(lote: LegacyLoteData): LoteData {
-  const merged = { ...initialState, ...lote };
-
-  return {
-    ...merged,
-    indiceTraseiroBoi: positiveNumber(
-      lote.indiceTraseiroBoi,
-      lote.indiceTraseiro,
-      initialState.indiceTraseiroBoi
-    ),
-    indiceTraseiroCapoteBoi: positiveNumber(
-      lote.indiceTraseiroCapoteBoi,
-      lote.indiceTraseiro,
-      initialState.indiceTraseiroCapoteBoi
-    ),
-    indiceDianteiroBoi: positiveNumber(
-      lote.indiceDianteiroBoi,
-      lote.indiceDianteiro,
-      initialState.indiceDianteiroBoi
-    ),
-    indicePontaBoi: positiveNumber(
-      lote.indicePontaBoi,
-      lote.indicePonta,
-      initialState.indicePontaBoi
-    ),
-    indiceTraseiroVaca: positiveNumber(
-      lote.indiceTraseiroVaca,
-      lote.indiceTraseiro,
-      initialState.indiceTraseiroVaca
-    ),
-    indiceTraseiroCapoteVaca: positiveNumber(
-      lote.indiceTraseiroCapoteVaca,
-      lote.indiceTraseiro,
-      initialState.indiceTraseiroCapoteVaca
-    ),
-    indiceDianteiroVaca: positiveNumber(
-      lote.indiceDianteiroVaca,
-      lote.indiceDianteiro,
-      initialState.indiceDianteiroVaca
-    ),
-    indicePontaVaca: positiveNumber(
-      lote.indicePontaVaca,
-      lote.indicePonta,
-      initialState.indicePontaVaca
-    ),
-  };
-}
 
 function brMoney(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -160,7 +94,7 @@ function formatBrazilianNumber(value: number, decimals = 2) {
 function editBrazilianNumber(value: number, decimals = 2) {
   if (!Number(value || 0)) return "";
   return Number(value || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   });
 }
@@ -343,7 +277,7 @@ export default function Home() {
 
     try {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) setSavedLots(parsed.map((lot) => normalizeLoteData(lot)));
+      if (Array.isArray(parsed)) setSavedLots(parsed);
     } catch {
       setSavedLots([]);
     }
@@ -356,10 +290,12 @@ export default function Home() {
   function saveCurrentLot() {
     const lotName = form.numeroLote.trim() || `Lote ${new Date().toLocaleString("pt-BR")}`;
 
-    const lotToSave = normalizeLoteData({
+    const lotToSave = {
       ...form,
       numeroLote: lotName,
-    });
+      miudos: form.miudos,
+      pesoMiudosRecebido: form.miudos,
+    };
 
     const next = [lotToSave, ...savedLots.filter((lot) => lot.numeroLote !== lotName)];
     setSavedLots(next);
@@ -371,7 +307,11 @@ export default function Home() {
   function openSelectedLot() {
     const lot = savedLots.find((item) => item.numeroLote === selectedLot);
     if (!lot) return;
-    setForm(normalizeLoteData(lot));
+    setForm({
+      ...initialState,
+      ...lot,
+      miudos: Number(lot.miudos || 0),
+    });
   }
 
   function deleteSelectedLot() {
@@ -381,31 +321,40 @@ export default function Home() {
     setSelectedLot("");
   }
 
+  function processarMiudos() {
+    saveCurrentLot();
+    window.location.href = "/miudos";
+  }
+
   const produtosForm = [
-    { indiceKey: "indiceTraseiroBoi" as const, defaultValue: initialState.indiceTraseiroBoi },
-    { indiceKey: "indiceTraseiroCapoteBoi" as const, defaultValue: initialState.indiceTraseiroCapoteBoi },
-    { indiceKey: "indiceDianteiroBoi" as const, defaultValue: initialState.indiceDianteiroBoi },
-    { indiceKey: "indicePontaBoi" as const, defaultValue: initialState.indicePontaBoi },
-    { indiceKey: "indiceTraseiroVaca" as const, defaultValue: initialState.indiceTraseiroVaca },
-    { indiceKey: "indiceTraseiroCapoteVaca" as const, defaultValue: initialState.indiceTraseiroCapoteVaca },
-    { indiceKey: "indiceDianteiroVaca" as const, defaultValue: initialState.indiceDianteiroVaca },
-    { indiceKey: "indicePontaVaca" as const, defaultValue: initialState.indicePontaVaca },
+    { indiceKey: "indiceTraseiro" as const },
+    { indiceKey: "indiceTraseiroCapoteBoi" as const },
+    { indiceKey: "indiceTraseiroCapoteVaca" as const },
+    { indiceKey: "indiceDianteiro" as const },
+    { indiceKey: "indicePonta" as const },
+    { indiceKey: "indiceMiudos" as const },
   ];
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-900 print:bg-white print:p-0">
       <div className="mx-auto max-w-7xl space-y-5 print:max-w-none print:space-y-3">
         <header className="rounded-2xl border border-emerald-950/10 bg-white p-5 shadow-sm print:shadow-none">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-emerald-950 md:text-3xl">
-              FRIGORÍFICO ELDORADO
-            </h1>
-            <p className="text-sm font-medium text-slate-600">
-              Sistema de Rendimentos e Precificação
-            </p>
-            <p className="mt-1 text-xs font-semibold text-slate-500">
-              Desenvolvido por Thiago Meneses
-            </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-emerald-950 md:text-3xl">
+                FRIGORÍFICO ELDORADO
+              </h1>
+              <p className="text-sm font-medium text-slate-600">
+                Sistema de Rendimentos e Custos
+              </p>
+            </div>
+
+            <a
+              href="/relatorios"
+              className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-950 transition hover:border-emerald-950/40 hover:bg-emerald-100"
+            >
+              Relatórios
+            </a>
           </div>
         </header>
 
@@ -415,8 +364,6 @@ export default function Home() {
             { title: "Carcaça total", value: `${brNumber(calc.carcacaQuenteTotal)} kg` },
             { title: "Peso médio", value: `${brNumber(calc.pesoMedioGeral)} kg` },
             { title: "Quebra estimada", value: brPercent(form.quebraPercentual) },
-            { title: "Receita prevista", value: brMoney(calc.receitaPrevista) },
-            { title: "Lucro previsto", value: brMoney(calc.lucroPrevisto) },
           ]}
         />
 
@@ -432,16 +379,16 @@ export default function Home() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="mb-3 font-black text-emerald-950">Bois</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                <NumericInput label="Quantidade de bois" value={form.quantidadeBois} integer suffix="cab." onChange={(v) => update("quantidadeBois", v)} />
-                <NumericInput label="Carcaça quente bois" value={form.carcacaQuenteBoi} suffix="kg" onChange={(v) => update("carcacaQuenteBoi", v)} />
+                <NumericInput label="Quantidade de bois" value={form.quantidadeBois} integer onChange={(v) => update("quantidadeBois", v)} />
+                <NumericInput label="Carcaça quente bois (kg)" value={form.carcacaQuenteBoi} onChange={(v) => update("carcacaQuenteBoi", v)} />
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="mb-3 font-black text-emerald-950">Vacas</h3>
               <div className="grid gap-3 md:grid-cols-2">
-                <NumericInput label="Quantidade de vacas" value={form.quantidadeVacas} integer suffix="cab." onChange={(v) => update("quantidadeVacas", v)} />
-                <NumericInput label="Carcaça quente vacas" value={form.carcacaQuenteVaca} suffix="kg" onChange={(v) => update("carcacaQuenteVaca", v)} />
+                <NumericInput label="Quantidade de vacas" value={form.quantidadeVacas} integer onChange={(v) => update("quantidadeVacas", v)} />
+                <NumericInput label="Carcaça quente vacas (kg)" value={form.carcacaQuenteVaca} onChange={(v) => update("carcacaQuenteVaca", v)} />
               </div>
             </div>
           </div>
@@ -465,12 +412,12 @@ export default function Home() {
 
         <Section title="Arrobas">
           <div className="grid gap-3 md:grid-cols-7">
-            <SmallCard label="Arrobas bois" value={`${brNumber(calc.arrobasBoi)} @`} />
-            <SmallCard label="Arrobas vacas" value={`${brNumber(calc.arrobasVaca)} @`} />
-            <SmallCard label="Arrobas totais" value={`${brNumber(calc.arrobasTotal)} @`} />
-            <SmallCard label="Média @ boi" value={`${brNumber(calc.mediaArrobaBoi)} @`} />
-            <SmallCard label="Média @ vaca" value={`${brNumber(calc.mediaArrobaVaca)} @`} />
-            <SmallCard label="Média @ geral" value={`${brNumber(calc.mediaArrobaGeral)} @`} />
+            <SmallCard label="Arrobas bois" value={brNumber(calc.arrobasBoi)} />
+            <SmallCard label="Arrobas vacas" value={brNumber(calc.arrobasVaca)} />
+            <SmallCard label="Arrobas totais" value={brNumber(calc.arrobasTotal)} />
+            <SmallCard label="Média @ boi" value={brNumber(calc.mediaArrobaBoi)} />
+            <SmallCard label="Média @ vaca" value={brNumber(calc.mediaArrobaVaca)} />
+            <SmallCard label="Média @ geral" value={brNumber(calc.mediaArrobaGeral)} />
             <SmallCard label="Custo/@" value={brMoney(calc.custoPorArroba)} />
           </div>
         </Section>
@@ -479,28 +426,29 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Boi</h3>
-              <NumericInput label="Traseiro boi" value={form.traseiroBoi} suffix="kg" onChange={(v) => update("traseiroBoi", v)} />
-              <NumericInput label="Traseiro capote de boi" value={form.traseiroCapoteBoi} suffix="kg" onChange={(v) => update("traseiroCapoteBoi", v)} />
-              <NumericInput label="Dianteiro boi" value={form.dianteiroBoi} suffix="kg" onChange={(v) => update("dianteiroBoi", v)} />
-              <NumericInput label="Ponta de Agulha boi" value={form.pontaBoi} suffix="kg" onChange={(v) => update("pontaBoi", v)} />
+              <NumericInput label="Traseiro boi (kg)" value={form.traseiroBoi} onChange={(v) => update("traseiroBoi", v)} />
+              <NumericInput label="Traseiro capote de boi (kg)" value={form.traseiroCapoteBoi} onChange={(v) => update("traseiroCapoteBoi", v)} />
+              <NumericInput label="Dianteiro boi (kg)" value={form.dianteiroBoi} onChange={(v) => update("dianteiroBoi", v)} />
+              <NumericInput label="Ponta de Agulha boi (kg)" value={form.pontaBoi} onChange={(v) => update("pontaBoi", v)} />
             </div>
 
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Vaca</h3>
-              <NumericInput label="Traseiro vaca" value={form.traseiroVaca} suffix="kg" onChange={(v) => update("traseiroVaca", v)} />
-              <NumericInput label="Traseiro capote de vaca" value={form.traseiroCapoteVaca} suffix="kg" onChange={(v) => update("traseiroCapoteVaca", v)} />
-              <NumericInput label="Dianteiro vaca" value={form.dianteiroVaca} suffix="kg" onChange={(v) => update("dianteiroVaca", v)} />
-              <NumericInput label="Ponta de Agulha vaca" value={form.pontaVaca} suffix="kg" onChange={(v) => update("pontaVaca", v)} />
+              <NumericInput label="Traseiro vaca (kg)" value={form.traseiroVaca} onChange={(v) => update("traseiroVaca", v)} />
+              <NumericInput label="Traseiro capote de vaca (kg)" value={form.traseiroCapoteVaca} onChange={(v) => update("traseiroCapoteVaca", v)} />
+              <NumericInput label="Dianteiro vaca (kg)" value={form.dianteiroVaca} onChange={(v) => update("dianteiroVaca", v)} />
+              <NumericInput label="Ponta de Agulha vaca (kg)" value={form.pontaVaca} onChange={(v) => update("pontaVaca", v)} />
             </div>
 
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="font-black text-emerald-950">Geral</h3>
+              <NumericInput label="Miúdos (kg)" value={form.miudos} onChange={(v) => update("miudos", v)} />
               <ResultLine label="Traseiro total" value={`${brNumber(calc.producaoTraseiro)} kg`} />
               <ResultLine label="Capote de boi" value={`${brNumber(calc.producaoTraseiroCapoteBoi)} kg`} />
               <ResultLine label="Capote de vaca" value={`${brNumber(calc.producaoTraseiroCapoteVaca)} kg`} />
               <ResultLine label="Dianteiro total" value={`${brNumber(calc.producaoDianteiro)} kg`} />
               <ResultLine label="Ponta total" value={`${brNumber(calc.producaoPonta)} kg`} />
-              <ResultLine label="Produção total dos cortes" value={`${brNumber(calc.producaoCarcacaTotal)} kg`} />
+              <ResultLine label="Produção total" value={`${brNumber(calc.producaoTotal)} kg`} />
             </div>
           </div>
         </Section>
@@ -508,7 +456,7 @@ export default function Home() {
         <Section title="Rendimentos">
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Boi - base fria</h3>
+              <h3 className="mb-2 font-black text-emerald-950">Boi</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiroBoi)} />
               <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapoteBoi)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiroBoi)} />
@@ -516,7 +464,7 @@ export default function Home() {
             </div>
 
             <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Vaca - base fria</h3>
+              <h3 className="mb-2 font-black text-emerald-950">Vaca</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiroVaca)} />
               <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapoteVaca)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiroVaca)} />
@@ -526,10 +474,12 @@ export default function Home() {
             <div className="rounded-xl border bg-slate-50 p-4">
               <h3 className="mb-2 font-black text-emerald-950">Geral</h3>
               <ResultLine label="Rend. traseiro" value={brPercent(calc.rendimentoTraseiro)} />
-              <ResultLine label="Rend. capote" value={brPercent(calc.rendimentoTraseiroCapote)} />
+              <ResultLine label="Rend. capote de boi" value={brPercent(calc.rendimentoTraseiroCapoteBoiGeral)} />
+              <ResultLine label="Rend. capote de vaca" value={brPercent(calc.rendimentoTraseiroCapoteVacaGeral)} />
               <ResultLine label="Rend. dianteiro" value={brPercent(calc.rendimentoDianteiro)} />
               <ResultLine label="Rend. ponta" value={brPercent(calc.rendimentoPonta)} />
-              <ResultLine label="Aproveitamento cortes" value={brPercent(calc.aproveitamentoIndustrial)} />
+              <ResultLine label="Rend. miúdos" value={brPercent(calc.rendimentoMiudos)} />
+              <ResultLine label="Aproveitamento" value={brPercent(calc.aproveitamentoIndustrial)} />
             </div>
           </div>
         </Section>
@@ -566,7 +516,7 @@ export default function Home() {
             <MoneyInput label="Outros custos" value={form.outrosCustos} onChange={(v) => update("outrosCustos", v)} />
             <MoneyInput label="Custo por cabeça" value={form.custoPorCabecaAdicional} onChange={(v) => update("custoPorCabecaAdicional", v)} />
             <MoneyInput label="Folha do abate mensal" value={form.folhaAbateMensal} onChange={(v) => update("folhaAbateMensal", v)} />
-            <NumericInput label="Dias de abate no mês" value={form.diasAbateMes} integer suffix="dias" onChange={(v) => update("diasAbateMes", v)} />
+            <NumericInput label="Dias de abate no mês" value={form.diasAbateMes} integer onChange={(v) => update("diasAbateMes", v)} />
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -579,21 +529,13 @@ export default function Home() {
           </div>
         </Section>
 
-        <Section title="Precificação Sugerida">
-          <div className="mb-4 grid gap-3 md:grid-cols-[0.45fr_1.55fr]">
-            <NumericInput
-              label="Margem para sugestão"
-              value={form.margemPercentual}
-              suffix="%"
-              onChange={(v) => update("margemPercentual", v)}
-            />
-            <div className="rounded-xl border border-emerald-950/20 bg-emerald-50 p-3 text-sm font-semibold text-emerald-950">
-              Este bloco estima preço mínimo sugerido para estudo interno do PCP com base apenas nos cortes de carcaça.
-            </div>
+        <Section title="Rateio de Custos">
+          <div className="mb-4 rounded-xl border border-emerald-950/20 bg-emerald-50 p-3 text-sm font-semibold text-emerald-950">
+            Este bloco distribui o custo do lote entre os cortes de carcaça. Valores comerciais ficam fora deste projeto.
           </div>
 
           <div className="overflow-x-auto rounded-xl border">
-            <table className="w-full min-w-[980px] border-collapse text-sm">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
                 <tr className="bg-emerald-950 text-white">
                   <th className="p-3 text-left">Produto</th>
@@ -601,9 +543,6 @@ export default function Home() {
                   <th className="p-3 text-center">Índice</th>
                   <th className="p-3 text-right">Custo distribuído</th>
                   <th className="p-3 text-right">Custo/kg</th>
-                  <th className="p-3 text-right">Preço sugerido/kg</th>
-                  <th className="p-3 text-right">Receita prevista</th>
-                  <th className="p-3 text-right">Lucro previsto</th>
                 </tr>
               </thead>
 
@@ -618,17 +557,12 @@ export default function Home() {
                       <td className="p-2">
                         <NumericInput
                           label=""
-                          value={Number(form[formProduto.indiceKey] || 0) > 0 ? form[formProduto.indiceKey] : formProduto.defaultValue}
+                          value={form[formProduto.indiceKey]}
                           onChange={(v) => update(formProduto.indiceKey, v)}
                         />
                       </td>
                       <td className="p-3 text-right font-bold">{brMoney(produto.custoDistribuido)}</td>
                       <td className="p-3 text-right font-bold">{brMoney(produto.custoKg)}</td>
-                      <td className="p-3 text-right font-black text-emerald-800">
-                        {brMoney(produto.precoSugerido)}
-                      </td>
-                      <td className="p-3 text-right font-bold">{brMoney(produto.receitaPrevista)}</td>
-                      <td className="p-3 text-right font-bold">{brMoney(produto.lucroPrevisto)}</td>
                     </tr>
                   );
                 })}
@@ -639,31 +573,9 @@ export default function Home() {
                   <td className="p-3 text-center">-</td>
                   <td className="p-3 text-right font-black">{brMoney(calc.custoTotal)}</td>
                   <td className="p-3 text-right">-</td>
-                  <td className="p-3 text-right">-</td>
-                  <td className="p-3 text-right font-black">{brMoney(calc.receitaPrevista)}</td>
-                  <td className="p-3 text-right font-black">{brMoney(calc.lucroPrevisto)}</td>
                 </tr>
               </tbody>
             </table>
-          </div>
-        </Section>
-
-        <Section title="Resultado">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Receita prevista</h3>
-              <div className="text-2xl font-black text-emerald-950">{brMoney(calc.receitaPrevista)}</div>
-            </div>
-
-            <div className="rounded-xl border bg-slate-50 p-4">
-              <h3 className="mb-2 font-black text-emerald-950">Lucro bruto previsto</h3>
-              <div className="text-2xl font-black text-emerald-950">{brMoney(calc.lucroPrevisto)}</div>
-            </div>
-
-            <div className="rounded-xl border bg-emerald-950 p-4 text-white">
-              <h3 className="mb-2 font-black">Margem prevista</h3>
-              <div className="text-2xl font-black">{brPercent(calc.margemPrevista)}</div>
-            </div>
           </div>
         </Section>
 
@@ -677,16 +589,19 @@ export default function Home() {
           />
         </Section>
 
-        <Section title="Histórico e Impressão">
-          <div className="grid gap-3 md:grid-cols-6">
-            <button onClick={saveCurrentLot} className="rounded-xl bg-emerald-950 px-4 py-2 text-sm font-bold text-white">
+        <Section title="Ações do Lote">
+          <div className="grid gap-3 lg:grid-cols-[1fr_2fr_0.75fr_0.75fr_1fr]">
+            <button
+              onClick={saveCurrentLot}
+              className="rounded-xl bg-emerald-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-900"
+            >
               Salvar lote
             </button>
 
             <select
               value={selectedLot}
               onChange={(e) => setSelectedLot(e.target.value)}
-              className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-emerald-800 focus:bg-emerald-50"
             >
               <option value="">Selecione um lote salvo</option>
               {savedLots.map((lot) => (
@@ -696,27 +611,30 @@ export default function Home() {
               ))}
             </select>
 
-            <button onClick={openSelectedLot} className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-bold text-white">
-              Abrir lote
+            <button
+              onClick={openSelectedLot}
+              disabled={!selectedLot}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Abrir
             </button>
 
-            <button onClick={deleteSelectedLot} className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white">
-              Excluir lote
+            <button
+              onClick={deleteSelectedLot}
+              disabled={!selectedLot}
+              className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Excluir
             </button>
 
+            <button
+              onClick={processarMiudos}
+              className="rounded-xl border border-emerald-950 bg-white px-4 py-2 text-sm font-black text-emerald-950 transition hover:bg-emerald-50"
+            >
+              Processar miúdos
+            </button>
           </div>
-
-          <button
-            onClick={() => window.print()}
-            className="mt-3 w-full rounded-xl border border-emerald-950 bg-white px-4 py-2 text-sm font-black text-emerald-950"
-          >
-            IMPRIMIR RELATÓRIO
-          </button>
         </Section>
-
-        <footer className="pb-6 text-center text-xs font-semibold text-slate-500 print:pb-0">
-          Desenvolvido por Thiago Meneses
-        </footer>
       </div>
     </main>
   );
