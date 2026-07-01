@@ -66,10 +66,25 @@ function parseBrazilianNumber(text: string) {
 
   const normalized = clean.includes(",")
     ? clean.replace(/\./g, "").replace(",", ".")
-    : clean;
+    : clean.includes(".")
+      ? normalizeDotOnlyNumber(clean)
+      : clean;
 
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeDotOnlyNumber(value: string) {
+  const sign = value.startsWith("-") ? "-" : "";
+  const unsigned = sign ? value.slice(1) : value;
+  const parts = unsigned.split(".");
+  const lastPart = parts[parts.length - 1];
+
+  if (parts.length > 2 || lastPart.length === 3) {
+    return `${sign}${parts.join("")}`;
+  }
+
+  return value;
 }
 
 function formatBrazilianNumber(value: number, decimals = 2) {
@@ -366,6 +381,13 @@ export default function MiudosPage() {
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Relatórios
+              </a>
+
+              <a
+                href="/quebra"
+                className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
+              >
+                Calculadora de Quebra
               </a>
             </div>
           </div>

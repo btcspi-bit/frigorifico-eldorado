@@ -15,10 +15,25 @@ function parseBrazilianNumber(text: string) {
 
   const normalized = clean.includes(",")
     ? clean.replace(/\./g, "").replace(",", ".")
-    : clean;
+    : clean.includes(".")
+      ? normalizeDotOnlyNumber(clean)
+      : clean;
 
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeDotOnlyNumber(value: string) {
+  const sign = value.startsWith("-") ? "-" : "";
+  const unsigned = sign ? value.slice(1) : value;
+  const parts = unsigned.split(".");
+  const lastPart = parts[parts.length - 1];
+
+  if (parts.length > 2 || lastPart.length === 3) {
+    return `${sign}${parts.join("")}`;
+  }
+
+  return value;
 }
 
 function formatBrazilianNumber(value: number, decimals = 2) {

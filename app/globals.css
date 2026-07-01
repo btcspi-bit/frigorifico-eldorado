@@ -27,19 +27,28 @@ body {
 
 @page {
   size: A4;
-  margin: 12mm;
+  margin: 0;
+}
+
+.quebra-report .report-metric {
+  min-width: 0;
 }
 
 @media print {
+  html,
   body {
     background: #ffffff !important;
+    margin: 0 !important;
+    width: 100% !important;
   }
 
   .report-page {
     background: #ffffff !important;
     color: #111827 !important;
     font-size: 10px;
-    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-height: auto !important;
+    padding: 9mm !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
@@ -56,7 +65,7 @@ body {
 
   .report-header {
     border: 0 !important;
-    border-bottom: 3px solid #064e3b !important;
+    border-bottom: 2px solid #064e3b !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 0 0 10px !important;
@@ -143,7 +152,7 @@ body {
   }
 
   .report-page section h2 {
-    border-bottom: 1.5px solid #064e3b !important;
+    border-bottom: 1px solid #064e3b !important;
     color: #064e3b !important;
     font-size: 13px !important;
     line-height: 1.2 !important;
@@ -209,5 +218,28 @@ body {
     margin-top: 8px !important;
     padding-top: 6px !important;
     text-align: center !important;
+  }
+
+  .quebra-report {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .quebra-report .report-header h1 {
+    font-size: 20px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .quebra-report .report-kpis {
+    gap: 7px !important;
+    margin: 9px 0 11px !important;
+  }
+
+  .quebra-report .report-metric {
+    padding: 7px 8px !important;
+  }
+
+  .quebra-report .report-metric div:nth-child(2) {
+    font-size: 14px !important;
   }
 }

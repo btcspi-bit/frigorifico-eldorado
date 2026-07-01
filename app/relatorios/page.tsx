@@ -272,7 +272,7 @@ export default function RelatoriosPage() {
       <div className="report-wrapper mx-auto max-w-5xl space-y-4 print:max-w-none print:space-y-0">
         <div className="report-screen-only print:hidden">
           <Section title="Relatórios">
-            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto]">
+            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto_auto]">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold uppercase tracking-wide text-slate-600">
                   Data inicial
@@ -321,6 +321,13 @@ export default function RelatoriosPage() {
                 className="self-end rounded-xl border border-emerald-950 px-4 py-3 text-center text-sm font-black text-emerald-950"
               >
                 Voltar
+              </a>
+
+              <a
+                href="/quebra"
+                className="self-end rounded-xl border border-emerald-950 bg-emerald-50 px-4 py-3 text-center text-sm font-black text-emerald-950"
+              >
+                Quebra
               </a>
             </div>
           </Section>
