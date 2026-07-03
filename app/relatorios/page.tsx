@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Section from "../components/Section";
 import { LoteData } from "../types/lote";
@@ -134,8 +135,10 @@ export default function RelatoriosPage() {
       totalCabecas: 0,
       carcacaQuenteTotal: 0,
       carcacaFriaTotal: 0,
+      arrobasQuenteTotal: 0,
       arrobasTotal: 0,
       producaoTotal: 0,
+      producaoCarnesTotal: 0,
       miudosTotal: 0,
       custoGado: 0,
       frete: 0,
@@ -154,8 +157,10 @@ export default function RelatoriosPage() {
       base.totalCabecas += calc.totalCabecas;
       base.carcacaQuenteTotal += calc.carcacaQuenteTotal;
       base.carcacaFriaTotal += calc.carcacaFriaTotal;
-      base.arrobasTotal += calc.arrobasTotal;
+      base.arrobasQuenteTotal += calc.arrobasQuenteTotal;
+      base.arrobasTotal += calc.arrobasFriaTotal;
       base.producaoTotal += calc.producaoTotal;
+      base.producaoCarnesTotal += calc.producaoCarnes;
       base.miudosTotal += calc.producaoMiudos;
       base.custoGado += calc.custoGadoConsiderado;
       base.frete += Number(lote.frete || 0);
@@ -176,6 +181,8 @@ export default function RelatoriosPage() {
       taxasOutros,
       quebraMedia: safeDiv(base.carcacaQuenteTotal - base.carcacaFriaTotal, base.carcacaQuenteTotal) * 100,
       pesoMedioGeral: safeDiv(base.carcacaQuenteTotal, base.totalCabecas),
+      mediaArrobaQuenteGeral: safeDiv(base.arrobasQuenteTotal, base.totalCabecas),
+      mediaArrobaFriaGeral: safeDiv(base.arrobasTotal, base.totalCabecas),
       mediaArrobaGeral: safeDiv(base.arrobasTotal, base.totalCabecas),
       aproveitamentoIndustrial: safeDiv(base.producaoTotal, base.carcacaFriaTotal) * 100,
       rendimentoMiudos: safeDiv(base.miudosTotal, base.carcacaFriaTotal) * 100,
@@ -184,6 +191,8 @@ export default function RelatoriosPage() {
       custoPorKgProduzido: safeDiv(base.custoTotal, base.producaoTotal),
       custoPorKgCarcacaQuente: safeDiv(base.custoTotal, base.carcacaQuenteTotal),
       custoPorKgCarcacaFria: safeDiv(base.custoTotal, base.carcacaFriaTotal),
+      custoPorArrobaQuente: safeDiv(base.custoTotal, base.arrobasQuenteTotal),
+      custoPorArrobaFria: safeDiv(base.custoTotal, base.arrobasTotal),
       custoPorArroba: safeDiv(base.custoTotal, base.arrobasTotal),
       custoGadoPorCabeca: safeDiv(base.custoGado, base.totalCabecas),
       custoOperacionalPorCabeca: safeDiv(custoOperacional, base.totalCabecas),
@@ -211,8 +220,10 @@ export default function RelatoriosPage() {
     { label: "Carcaça quente total", value: `${brNumber(resumo.carcacaQuenteTotal)} kg` },
     { label: "Carcaça fria estimada", value: `${brNumber(resumo.carcacaFriaTotal)} kg` },
     { label: "Quebra média aplicada", value: brPercent(resumo.quebraMedia) },
-    { label: "Arrobas totais", value: brNumber(resumo.arrobasTotal) },
-    { label: "Produção total aproveitada", value: `${brNumber(resumo.producaoTotal)} kg` },
+    { label: "Arrobas de compra (carcaça quente)", value: brNumber(resumo.arrobasQuenteTotal) },
+    { label: "Arrobas de retorno (carcaça fria)", value: brNumber(resumo.arrobasTotal) },
+    { label: "Produção total informada", value: `${brNumber(resumo.producaoTotal)} kg` },
+    { label: "Carnes informadas", value: `${brNumber(resumo.producaoCarnesTotal)} kg` },
     { label: "Miúdos informados", value: `${brNumber(resumo.miudosTotal)} kg` },
     { label: "Miúdos por cabeça", value: `${brNumber(resumo.miudosPorCabeca)} kg` },
     { label: "Rendimento dos miúdos", value: brPercent(resumo.rendimentoMiudos) },
@@ -230,9 +241,9 @@ export default function RelatoriosPage() {
       note: brPercent(safeDiv(resumo.frete, resumo.custoTotal) * 100),
     },
     {
-      label: "Custo por cabeça aplicado",
+      label: "Custo adicional total",
       value: brMoney(resumo.custoCabecas),
-      note: "campo informado no abate",
+      note: `${brMoney(resumo.custoAdicionalPorCabeca)} / cabeça`,
     },
     {
       label: "Folha aplicada ao lote",
@@ -254,17 +265,18 @@ export default function RelatoriosPage() {
 
   const indicadoresRows: Row[] = [
     { label: "Custo final por cabeça", value: brMoney(resumo.custoPorCabeca), highlight: true },
-    { label: "Custo final por kg produzido", value: brMoney(resumo.custoPorKgProduzido), highlight: true },
-    { label: "Custo final por arroba", value: brMoney(resumo.custoPorArroba), highlight: true },
+    { label: "Custo/@ compra quente", value: brMoney(resumo.custoPorArrobaQuente), highlight: true },
+    { label: "Custo/@ retorno fria", value: brMoney(resumo.custoPorArrobaFria), highlight: true },
+    { label: "Custo/kg produção informada", value: brMoney(resumo.custoPorKgProduzido), highlight: true },
     { label: "Custo por kg de carcaça fria", value: brMoney(resumo.custoPorKgCarcacaFria) },
     { label: "Custo por kg de carcaça quente", value: brMoney(resumo.custoPorKgCarcacaQuente) },
     { label: "Gado por cabeça", value: brMoney(resumo.custoGadoPorCabeca) },
     { label: "Operacional sem gado por cabeça", value: brMoney(resumo.custoOperacionalPorCabeca) },
-    { label: "Operacional sem gado por kg produzido", value: brMoney(resumo.custoOperacionalPorKg) },
+    { label: "Operacional sem gado/kg produção informada", value: brMoney(resumo.custoOperacionalPorKg) },
     { label: "Frete por cabeça", value: brMoney(resumo.fretePorCabeca) },
     { label: "Folha por cabeça", value: brMoney(resumo.folhaPorCabeca) },
     { label: "Taxas + outros por cabeça", value: brMoney(resumo.taxasOutrosPorCabeca) },
-    { label: "Custo aplicado por cabeça", value: brMoney(resumo.custoAdicionalPorCabeca) },
+    { label: "Custo adicional por cabeça", value: brMoney(resumo.custoAdicionalPorCabeca) },
   ];
 
   return (
@@ -316,26 +328,26 @@ export default function RelatoriosPage() {
                 Imprimir A4
               </button>
 
-              <a
+              <Link
                 href="/"
                 className="self-end rounded-xl border border-emerald-950 px-4 py-3 text-center text-sm font-black text-emerald-950"
               >
                 Voltar
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/quebra"
                 className="self-end rounded-xl border border-emerald-950 bg-emerald-50 px-4 py-3 text-center text-sm font-black text-emerald-950"
               >
                 Quebra
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/precificacao"
                 className="self-end rounded-xl border border-emerald-950 bg-emerald-50 px-4 py-3 text-center text-sm font-black text-emerald-950"
               >
                 Panorama
-              </a>
+              </Link>
             </div>
           </Section>
         </div>
@@ -365,8 +377,8 @@ export default function RelatoriosPage() {
             <div className="report-kpis grid gap-3 md:grid-cols-4">
               <MetricCard label="Custo total final" value={brMoney(resumo.custoTotal)} />
               <MetricCard label="Custo / cabeça" value={brMoney(resumo.custoPorCabeca)} />
-              <MetricCard label="Custo / kg produzido" value={brMoney(resumo.custoPorKgProduzido)} />
-              <MetricCard label="Custo / @" value={brMoney(resumo.custoPorArroba)} />
+              <MetricCard label="Custo/@ compra quente" value={brMoney(resumo.custoPorArrobaQuente)} />
+              <MetricCard label="Custo/@ retorno fria" value={brMoney(resumo.custoPorArrobaFria)} />
             </div>
 
             <div className="report-two-col grid gap-4 lg:grid-cols-2">
@@ -390,13 +402,12 @@ export default function RelatoriosPage() {
               <div className="space-y-2 text-sm font-semibold leading-relaxed text-slate-700">
                 <p>
                   O lote consolidado carregou {brMoney(resumo.custoPorCabeca)} por cabeça,
-                  {` ${brMoney(resumo.custoPorKgProduzido)} por kg produzido`} e
-                  {` ${brMoney(resumo.custoPorArroba)} por arroba`}.
+                  {` ${brMoney(resumo.custoPorArrobaQuente)} por @ de compra na carcaça quente`} e
+                  {` ${brMoney(resumo.custoPorArrobaFria)} por @ de retorno na carcaça fria`}.
                 </p>
                 <p>
-                  O campo de custo por cabeça aplicado é tratado como custo consolidado informado no
-                  abate. A aba de miúdos não adiciona custo separado; ela serve apenas para leitura de
-                  rendimento e fechamento de pesos.
+                  O preço por @ de boi/vaca é calculado na carcaça quente. A carcaça fria entra para leitura de retorno após a quebra.
+                  Miúdos não adicionam custo separado; entram apenas como peso/produto informado.
                 </p>
                 <p>
                   Sem considerar o gado, a operação adicionou {brMoney(resumo.custoOperacional)}
@@ -406,12 +417,17 @@ export default function RelatoriosPage() {
                   Este relatório não contempla lucro, preço de venda ou análise comercial; ele consolida
                   apenas custo final e desempenho operacional do lote.
                 </p>
+                {resumo.producaoCarnesTotal <= 0 && resumo.miudosTotal > 0 && (
+                  <p>
+                    Atenção: carnes não informadas no período. O custo/kg produção informada usa somente os produtos lançados.
+                  </p>
+                )}
               </div>
             </ReportSection>
           </div>
 
           <footer className="report-footer mt-5 border-t border-slate-200 pt-3 text-center text-[11px] font-semibold text-slate-500">
-            FRIGORÍFICO ELDORADO - Relatório gerado pelo sistema
+            ESTUDOS INTERNOS DE PLANEJAMENTO E CONTROLE DE PRODUÇÃO
           </footer>
         </article>
       </div>

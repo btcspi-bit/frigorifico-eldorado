@@ -1,5 +1,13 @@
 import { LoteData } from "../types/lote";
 
+type IndiceCustoKey =
+  | "indiceTraseiro"
+  | "indiceTraseiroCapoteBoi"
+  | "indiceTraseiroCapoteVaca"
+  | "indiceDianteiro"
+  | "indicePonta"
+  | "indiceMiudos";
+
 function safeDiv(value: number, divisor: number) {
   return divisor > 0 ? value / divisor : 0;
 }
@@ -20,13 +28,32 @@ export function calculate(data: LoteData) {
   const pesoMedioVaca = safeDiv(carcacaQuenteVaca, Number(data.quantidadeVacas || 0));
   const pesoMedioGeral = safeDiv(carcacaQuenteTotal, totalCabecas);
 
-  const arrobasBoi = carcacaFriaBoi / 15;
-  const arrobasVaca = carcacaFriaVaca / 15;
-  const arrobasTotal = carcacaFriaTotal / 15;
+  // Compra do boi/vaca: base de arroba quente.
+  // Retorno/planejamento: base de arroba fria, após quebra de resfriamento.
+  const arrobasQuenteBoi = carcacaQuenteBoi / 15;
+  const arrobasQuenteVaca = carcacaQuenteVaca / 15;
+  const arrobasQuenteTotal = carcacaQuenteTotal / 15;
 
-  const mediaArrobaBoi = safeDiv(arrobasBoi, Number(data.quantidadeBois || 0));
-  const mediaArrobaVaca = safeDiv(arrobasVaca, Number(data.quantidadeVacas || 0));
-  const mediaArrobaGeral = safeDiv(arrobasTotal, totalCabecas);
+  const arrobasFriaBoi = carcacaFriaBoi / 15;
+  const arrobasFriaVaca = carcacaFriaVaca / 15;
+  const arrobasFriaTotal = carcacaFriaTotal / 15;
+
+  // Mantém nomes antigos como base fria para compatibilidade dos relatórios já existentes.
+  const arrobasBoi = arrobasFriaBoi;
+  const arrobasVaca = arrobasFriaVaca;
+  const arrobasTotal = arrobasFriaTotal;
+
+  const mediaArrobaQuenteBoi = safeDiv(arrobasQuenteBoi, Number(data.quantidadeBois || 0));
+  const mediaArrobaQuenteVaca = safeDiv(arrobasQuenteVaca, Number(data.quantidadeVacas || 0));
+  const mediaArrobaQuenteGeral = safeDiv(arrobasQuenteTotal, totalCabecas);
+
+  const mediaArrobaFriaBoi = safeDiv(arrobasFriaBoi, Number(data.quantidadeBois || 0));
+  const mediaArrobaFriaVaca = safeDiv(arrobasFriaVaca, Number(data.quantidadeVacas || 0));
+  const mediaArrobaFriaGeral = safeDiv(arrobasFriaTotal, totalCabecas);
+
+  const mediaArrobaBoi = mediaArrobaFriaBoi;
+  const mediaArrobaVaca = mediaArrobaFriaVaca;
+  const mediaArrobaGeral = mediaArrobaFriaGeral;
 
   const producaoTraseiroBoi = Number(data.traseiroBoi || 0);
   const producaoTraseiroCapoteBoi = Number(data.traseiroCapoteBoi || 0);
@@ -42,14 +69,14 @@ export function calculate(data: LoteData) {
   const producaoDianteiro = producaoDianteiroBoi + producaoDianteiroVaca;
   const producaoPonta = producaoPontaBoi + producaoPontaVaca;
   const producaoMiudos = Number(data.miudos || 0);
-
-  const producaoTotal =
+  const producaoCarnes =
     producaoTraseiro +
     producaoTraseiroCapoteBoi +
     producaoTraseiroCapoteVaca +
     producaoDianteiro +
-    producaoPonta +
-    producaoMiudos;
+    producaoPonta;
+
+  const producaoTotal = producaoCarnes + producaoMiudos;
 
   const aproveitamentoIndustrial = safeDiv(producaoTotal, carcacaFriaTotal) * 100;
 
@@ -82,8 +109,8 @@ export function calculate(data: LoteData) {
 
   const valorGadoInformado = Number(data.valorGado || 0);
   const valorGadoPorArroba =
-    arrobasBoi * Number(data.precoArrobaBoi || 0) +
-    arrobasVaca * Number(data.precoArrobaVaca || 0);
+    arrobasQuenteBoi * Number(data.precoArrobaBoi || 0) +
+    arrobasQuenteVaca * Number(data.precoArrobaVaca || 0);
 
   const custoGadoConsiderado =
     valorGadoInformado > 0 ? valorGadoInformado : valorGadoPorArroba;
@@ -104,40 +131,69 @@ export function calculate(data: LoteData) {
     Number(data.taxas || 0) +
     Number(data.outrosCustos || 0);
 
-  const custoPorArroba = safeDiv(custoTotal, arrobasTotal);
+  const custoPorArrobaQuente = safeDiv(custoTotal, arrobasQuenteTotal);
+  const custoPorArrobaFria = safeDiv(custoTotal, arrobasFriaTotal);
+  const custoPorArroba = custoPorArrobaFria;
   const custoPorCabeca = safeDiv(custoTotal, totalCabecas);
   const custoPorKg = safeDiv(custoTotal, producaoTotal);
+  const custoPorKgProducaoInformada = custoPorKg;
+  const custoPorKgCarcacaFria = safeDiv(custoTotal, carcacaFriaTotal);
+  const custoPorKgCarcacaQuente = safeDiv(custoTotal, carcacaQuenteTotal);
 
   const produtos = [
     {
-      nome: "Traseiro",
-      peso: producaoTraseiro,
+      nome: "Traseiro Boi",
+      peso: producaoTraseiroBoi,
       indice: Number(data.indiceTraseiro || 0),
+      indiceKey: "indiceTraseiro" as IndiceCustoKey,
+    },
+    {
+      nome: "Traseiro Vaca",
+      peso: producaoTraseiroVaca,
+      indice: Number(data.indiceTraseiro || 0),
+      indiceKey: "indiceTraseiro" as IndiceCustoKey,
     },
     {
       nome: "Traseiro Capote de Boi",
       peso: producaoTraseiroCapoteBoi,
       indice: Number(data.indiceTraseiroCapoteBoi || 0),
+      indiceKey: "indiceTraseiroCapoteBoi" as IndiceCustoKey,
     },
     {
       nome: "Traseiro Capote de Vaca",
       peso: producaoTraseiroCapoteVaca,
       indice: Number(data.indiceTraseiroCapoteVaca || 0),
+      indiceKey: "indiceTraseiroCapoteVaca" as IndiceCustoKey,
     },
     {
-      nome: "Dianteiro",
-      peso: producaoDianteiro,
+      nome: "Dianteiro Boi",
+      peso: producaoDianteiroBoi,
       indice: Number(data.indiceDianteiro || 0),
+      indiceKey: "indiceDianteiro" as IndiceCustoKey,
     },
     {
-      nome: "Ponta de Agulha",
-      peso: producaoPonta,
+      nome: "Dianteiro Vaca",
+      peso: producaoDianteiroVaca,
+      indice: Number(data.indiceDianteiro || 0),
+      indiceKey: "indiceDianteiro" as IndiceCustoKey,
+    },
+    {
+      nome: "Ponta de Agulha Boi",
+      peso: producaoPontaBoi,
       indice: Number(data.indicePonta || 0),
+      indiceKey: "indicePonta" as IndiceCustoKey,
+    },
+    {
+      nome: "Ponta de Agulha Vaca",
+      peso: producaoPontaVaca,
+      indice: Number(data.indicePonta || 0),
+      indiceKey: "indicePonta" as IndiceCustoKey,
     },
     {
       nome: "Miúdos",
       peso: producaoMiudos,
       indice: Number(data.indiceMiudos || 0),
+      indiceKey: "indiceMiudos" as IndiceCustoKey,
     },
   ];
 
@@ -175,9 +231,21 @@ export function calculate(data: LoteData) {
     pesoMedioVaca,
     pesoMedioGeral,
 
+    arrobasQuenteBoi,
+    arrobasQuenteVaca,
+    arrobasQuenteTotal,
+    arrobasFriaBoi,
+    arrobasFriaVaca,
+    arrobasFriaTotal,
     arrobasBoi,
     arrobasVaca,
     arrobasTotal,
+    mediaArrobaQuenteBoi,
+    mediaArrobaQuenteVaca,
+    mediaArrobaQuenteGeral,
+    mediaArrobaFriaBoi,
+    mediaArrobaFriaVaca,
+    mediaArrobaFriaGeral,
     mediaArrobaBoi,
     mediaArrobaVaca,
     mediaArrobaGeral,
@@ -194,6 +262,7 @@ export function calculate(data: LoteData) {
     producaoDianteiro,
     producaoPonta,
     producaoMiudos,
+    producaoCarnes,
     producaoTotal,
 
     aproveitamentoIndustrial,
@@ -230,8 +299,13 @@ export function calculate(data: LoteData) {
     folhaAbateAplicada,
     custoTotal,
     custoPorArroba,
+    custoPorArrobaQuente,
+    custoPorArrobaFria,
     custoPorCabeca,
     custoPorKg,
+    custoPorKgProducaoInformada,
+    custoPorKgCarcacaFria,
+    custoPorKgCarcacaQuente,
     custoMiudos,
 
     produtosCalculados,

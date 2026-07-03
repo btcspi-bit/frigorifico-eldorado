@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import NumberInput from "../components/NumberInput";
 import { LoteData } from "../types/lote";
@@ -366,24 +367,24 @@ export default function QuebraPage() {
             </div>
 
             <div className="flex flex-wrap justify-start gap-2 md:justify-end">
-              <a
+              <Link
                 href="/"
                 className="rounded-xl border border-white/30 bg-white px-4 py-2 text-sm font-black text-emerald-950 transition hover:bg-emerald-50"
               >
                 Voltar ao abate
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/relatorios"
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Relatórios
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/precificacao"
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Panorama
-              </a>
+              </Link>
             </div>
           </div>
         </header>
@@ -584,7 +585,7 @@ export default function QuebraPage() {
             </div>
 
             <footer className="report-footer mt-5 border-t border-slate-200 pt-3 text-center text-[11px] font-semibold text-slate-500">
-              FRIGORÍFICO ELDORADO - Relatório gerado pelo sistema
+              ESTUDOS INTERNOS DE PLANEJAMENTO E CONTROLE DE PRODUÇÃO
             </footer>
           </article>
         </div>

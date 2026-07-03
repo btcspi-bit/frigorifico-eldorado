@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { MIUDOS_PRODUTOS, type MiudosProdutoKey } from "../utils/miudosProducts";
 
@@ -369,33 +370,33 @@ export default function MiudosPage() {
             </div>
 
             <div className="flex flex-wrap justify-start gap-2 print:hidden md:justify-end">
-              <a
+              <Link
                 href="/"
                 className="rounded-xl border border-white/30 bg-white px-4 py-2 text-sm font-black text-emerald-950 transition hover:bg-emerald-50"
               >
                 Voltar ao abate
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/relatorios"
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Relatórios
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/quebra"
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Calculadora de Quebra
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/precificacao"
                 className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
               >
                 Panorama
-              </a>
+              </Link>
             </div>
           </div>
         </header>
@@ -545,7 +546,7 @@ export default function MiudosPage() {
             </div>
 
             <footer className="rounded-2xl bg-emerald-950 p-4 text-center text-sm font-semibold uppercase tracking-wide text-white shadow-sm">
-              FRIGORÍFICO ELDORADO - MÓDULO MIÚDOS
+              ESTUDOS INTERNOS DE PLANEJAMENTO E CONTROLE DE PRODUÇÃO
             </footer>
           </>
         )}

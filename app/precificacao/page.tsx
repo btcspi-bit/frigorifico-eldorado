@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import NumberInput from "../components/NumberInput";
 import { LoteData } from "../types/lote";
@@ -8,6 +9,7 @@ import { calculate } from "../utils/calculations";
 const LOTES_KEY = "frigorifico-eldorado-lotes";
 const MIUDOS_HIST_KEY = "frigorifico-eldorado-miudos-historico";
 const PANORAMA_KEY = "frigorifico-eldorado-panorama-simples-v1";
+const INTERNAL_REPORT_SIGNATURE = "ESTUDOS INTERNOS DE PLANEJAMENTO E CONTROLE DE PRODUÇÃO";
 
 type MiudosHistoricoProduto = {
   key?: string;
@@ -29,6 +31,11 @@ type ProdutoResumo = {
 
 type PanoramaConfig = {
   margemSobreCusto: number;
+};
+
+type CostBreakdownItem = {
+  item: string;
+  value: number;
 };
 
 const defaultConfig: PanoramaConfig = {
@@ -107,31 +114,14 @@ function buildProdutos(lote: LoteData | null, miudosDoLote: MiudosHistoricoItem 
   if (!lote) return [];
 
   const produtos: ProdutoResumo[] = [
-    {
-      nome: "Traseiro",
-      grupo: "Carnes",
-      kg: Number(lote.traseiroBoi || 0) + Number(lote.traseiroVaca || 0),
-    },
-    {
-      nome: "Traseiro Capote de Boi",
-      grupo: "Carnes",
-      kg: Number(lote.traseiroCapoteBoi || 0),
-    },
-    {
-      nome: "Traseiro Capote de Vaca",
-      grupo: "Carnes",
-      kg: Number(lote.traseiroCapoteVaca || 0),
-    },
-    {
-      nome: "Dianteiro",
-      grupo: "Carnes",
-      kg: Number(lote.dianteiroBoi || 0) + Number(lote.dianteiroVaca || 0),
-    },
-    {
-      nome: "Ponta de Agulha",
-      grupo: "Carnes",
-      kg: Number(lote.pontaBoi || 0) + Number(lote.pontaVaca || 0),
-    },
+    { nome: "Traseiro Boi", grupo: "Carnes", kg: Number(lote.traseiroBoi || 0) },
+    { nome: "Traseiro Vaca", grupo: "Carnes", kg: Number(lote.traseiroVaca || 0) },
+    { nome: "Traseiro Capote de Boi", grupo: "Carnes", kg: Number(lote.traseiroCapoteBoi || 0) },
+    { nome: "Traseiro Capote de Vaca", grupo: "Carnes", kg: Number(lote.traseiroCapoteVaca || 0) },
+    { nome: "Dianteiro Boi", grupo: "Carnes", kg: Number(lote.dianteiroBoi || 0) },
+    { nome: "Dianteiro Vaca", grupo: "Carnes", kg: Number(lote.dianteiroVaca || 0) },
+    { nome: "Ponta de Agulha Boi", grupo: "Carnes", kg: Number(lote.pontaBoi || 0) },
+    { nome: "Ponta de Agulha Vaca", grupo: "Carnes", kg: Number(lote.pontaVaca || 0) },
   ];
 
   const miudosDetalhados = miudosDoLote?.produtos
@@ -195,11 +185,31 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function PrintKpi({ label, value, note }: { label: string; value: string; note?: string }) {
+  return (
+    <div className="print-kpi">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {note && <small>{note}</small>}
+    </div>
+  );
+}
+
+function PrintLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="print-line">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 export default function PrecificacaoPage() {
   const [lotes, setLotes] = useState<LoteData[]>([]);
   const [historicoMiudos, setHistoricoMiudos] = useState<MiudosHistoricoItem[]>([]);
   const [selectedLot, setSelectedLot] = useState("");
   const [config, setConfig] = useState<PanoramaConfig>(defaultConfig);
+  const [printedAt, setPrintedAt] = useState("-");
 
   useEffect(() => {
     const savedLots = localStorage.getItem(LOTES_KEY);
@@ -226,6 +236,7 @@ export default function PrecificacaoPage() {
     }
 
     setConfig(loadConfig());
+    setPrintedAt(new Date().toLocaleString("pt-BR"));
   }, []);
 
   useEffect(() => {
@@ -254,45 +265,302 @@ export default function PrecificacaoPage() {
     .filter((produto) => produto.grupo === "Miúdos")
     .reduce((total, produto) => total + produto.kg, 0);
 
+  const kgCarcacaQuente = Number(calc?.carcacaQuenteTotal || 0);
+  const kgCarcacaFria = Number(calc?.carcacaFriaTotal || 0);
+  const arrobasCompra = Number(calc?.arrobasQuenteTotal || 0);
+  const arrobasRetorno = Number(calc?.arrobasFriaTotal || 0);
+  const arrobasProducao = kgTotal / 15;
   const lucroPrevisto = custoTotal * (margemSobreCusto / 100);
   const receitaPrevista = custoTotal + lucroPrevisto;
   const margemNaVenda = safeDiv(lucroPrevisto, receitaPrevista) * 100;
   const coberturaCusto = safeDiv(receitaPrevista, custoTotal) * 100;
-  const custoPorKg = safeDiv(custoTotal, kgTotal);
-  const precoMedioNecessario = safeDiv(receitaPrevista, kgTotal);
-  const lucroPorCabeca = safeDiv(lucroPrevisto, totalCabecas);
-  const custoPorCabeca = safeDiv(custoTotal, totalCabecas);
-  const receitaPorCabeca = safeDiv(receitaPrevista, totalCabecas);
+  const custoPorArrobaCompra = safeDiv(custoTotal, arrobasCompra);
+  const custoPorArrobaRetorno = safeDiv(custoTotal, arrobasRetorno);
+  const receitaPorArrobaRetorno = safeDiv(receitaPrevista, arrobasRetorno);
+  const lucroPorArrobaRetorno = safeDiv(lucroPrevisto, arrobasRetorno);
+  const valorPorPontoArroba = custoPorArrobaRetorno / 100;
+  const custoPorKgProducao = safeDiv(custoTotal, kgTotal);
+  const retornoPorKgProducao = safeDiv(receitaPrevista, kgTotal);
+  const custoPorKgCarcacaQuente = safeDiv(custoTotal, kgCarcacaQuente);
+  const custoPorKgCarcacaFria = safeDiv(custoTotal, kgCarcacaFria);
+  const retornoPorKgCarcacaFria = safeDiv(receitaPrevista, kgCarcacaFria);
   const progressWidth = `${clamp(coberturaCusto, 0, 150)}%`;
+  const printProgressWidth = `${safeDiv(clamp(coberturaCusto, 0, 150), 150) * 100}%`;
   const miudosDetalhados = Boolean(miudosDoLote?.produtos?.some((produto) => Number(produto.peso || 0) > 0));
+  const producaoIncompleta = kgCarnes <= 0 && kgMiudos > 0;
+
+  const costBreakdown: CostBreakdownItem[] = [
+    { item: "Gado considerado", value: Number(calc?.custoGadoConsiderado || 0) },
+    { item: "Frete", value: Number(lote?.frete || 0) },
+    { item: "Custo adicional total", value: Number(calc?.custoCabecasAdicional || 0) },
+    { item: "Folha aplicada", value: Number(calc?.folhaAbateAplicada || 0) },
+    { item: "Taxas", value: Number(lote?.taxas || 0) },
+    { item: "Outros custos", value: Number(lote?.outrosCustos || 0) },
+  ];
 
   function setMargem(value: number) {
     setConfig({ margemSobreCusto: clamp(value, 0, 80) });
   }
 
+  function handlePrint() {
+    setPrintedAt(new Date().toLocaleString("pt-BR"));
+    window.setTimeout(() => window.print(), 0);
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-900 print:bg-white print:p-0">
-      <div className="mx-auto max-w-6xl space-y-5">
-        <header className="rounded-2xl bg-emerald-950 p-5 text-white shadow-sm print:hidden">
+      <article className="panorama-print-report">
+        <header className="print-master-header">
+          <div className="print-brand-block">
+            <div className="print-brand-eyebrow">FRIGORÍFICO ELDORADO</div>
+            <h1>Relatório Gerencial do Lote</h1>
+            <p>Panorama operacional, compra na carcaça quente, retorno na carcaça fria e produção informada.</p>
+          </div>
+
+          <div className="print-document-meta">
+            <div>
+              <span>Lote</span>
+              <strong>{lote?.numeroLote || "-"}</strong>
+            </div>
+            <div>
+              <span>Data do lote</span>
+              <strong>{formatDate(lote?.data)}</strong>
+            </div>
+            <div>
+              <span>Emissão</span>
+              <strong>{printedAt}</strong>
+            </div>
+          </div>
+        </header>
+
+        <section className="print-executive-kpis">
+          <PrintKpi label="Custo total do lote" value={brMoney(custoTotal)} note="Base importada do abate" />
+          <PrintKpi label="Custo/@ compra quente" value={brMoney(custoPorArrobaCompra)} note={`${brNumber(arrobasCompra)} @ quentes`} />
+          <PrintKpi label="Retorno/@ carcaça fria" value={brMoney(receitaPorArrobaRetorno)} note={`${brNumber(arrobasRetorno)} @ frias`} />
+          <PrintKpi label="Lucro previsto" value={brMoney(lucroPrevisto)} note={`${brMoney(lucroPorArrobaRetorno)} / @ fria`} />
+        </section>
+
+        <section className="print-executive-band">
+          <div>
+            <span className="print-section-label">Leitura direta</span>
+            <p>
+              Compra conferida pela <strong>carcaça quente</strong>. Retorno projetado pela <strong>carcaça fria</strong>. Com margem de <strong>{brPercent(margemSobreCusto)}</strong>, cada @ fria precisa retornar <strong>{brMoney(receitaPorArrobaRetorno)}</strong>.
+            </p>
+          </div>
+          <div className="print-highlight-total">
+            <span>Sobra projetada no lote</span>
+            <strong>{brMoney(lucroPrevisto)}</strong>
+          </div>
+        </section>
+
+        {producaoIncompleta && (
+          <section className="print-method-note">
+            <strong>Atenção:</strong> carnes não informadas no abate. A leitura por kg considera somente os miúdos/produtos lançados.
+          </section>
+        )}
+
+        <section className="print-grid print-grid-2">
+          <div className="print-panel print-panel-soft">
+            <div className="print-panel-heading">
+              <span>01</span>
+              <h2>Margem e cobertura</h2>
+            </div>
+
+            <div className="print-margin-layout">
+              <div className="print-margin-badge">
+                <span>Margem aplicada</span>
+                <strong>{brPercent(margemSobreCusto)}</strong>
+                <small>Margem na venda: {brPercent(margemNaVenda)}</small>
+              </div>
+              <div className="print-margin-lines">
+                <PrintLine label="Cada 1% de margem" value={`${brMoney(valorPorPontoArroba)} / @`} />
+                <PrintLine label="Cobertura do custo" value={brPercent(coberturaCusto, 1)} />
+                <PrintLine label="Ponto de equilíbrio" value="100,0%" />
+              </div>
+            </div>
+
+            <div className="print-progress-wrapper">
+              <div className="print-progress-labels">
+                <span>0%</span>
+                <span>Ponto de equilíbrio: 100%</span>
+                <span>150%</span>
+              </div>
+              <div className="print-progress-track">
+                <div className="print-progress-fill" style={{ width: printProgressWidth }} />
+                <div className="print-progress-marker" />
+              </div>
+            </div>
+          </div>
+
+          <div className="print-panel">
+            <div className="print-panel-heading">
+              <span>02</span>
+              <h2>Leitura por arroba</h2>
+            </div>
+            <div className="print-lines-block">
+              <PrintLine label="@ compra — carcaça quente" value={`${brNumber(arrobasCompra)} @`} />
+              <PrintLine label="Custo/@ compra quente" value={brMoney(custoPorArrobaCompra)} />
+              <PrintLine label="@ retorno — carcaça fria" value={`${brNumber(arrobasRetorno)} @`} />
+              <PrintLine label="Retorno projetado/@ fria" value={brMoney(receitaPorArrobaRetorno)} />
+              <PrintLine label="Lucro projetado/@ fria" value={brMoney(lucroPorArrobaRetorno)} />
+              <PrintLine label="Retorno/kg carcaça fria" value={`${brMoney(retornoPorKgCarcacaFria)} / kg`} />
+            </div>
+          </div>
+        </section>
+
+        <section className="print-grid print-grid-2">
+          <div className="print-panel">
+            <div className="print-panel-heading">
+              <span>03</span>
+              <h2>Base do lote e produção informada</h2>
+            </div>
+            <div className="print-lines-block">
+              <PrintLine label="Cabeças" value={brNumber(totalCabecas, 0)} />
+              <PrintLine label="Carcaça quente compra" value={`${brNumber(kgCarcacaQuente)} kg`} />
+              <PrintLine label="Carcaça fria retorno" value={`${brNumber(kgCarcacaFria)} kg`} />
+              <PrintLine label="Produção considerada" value={`${brNumber(kgTotal)} kg`} />
+              <PrintLine label="Produção equivalente" value={`${brNumber(arrobasProducao)} @`} />
+              <PrintLine label="Carnes" value={`${brNumber(kgCarnes)} kg`} />
+              <PrintLine label="Miúdos" value={`${brNumber(kgMiudos)} kg`} />
+              <PrintLine label="Custo/kg produção informada" value={brMoney(custoPorKgProducao)} />
+              <PrintLine label="Custo/kg carcaça quente" value={brMoney(custoPorKgCarcacaQuente)} />
+              <PrintLine label="Custo/kg carcaça fria" value={brMoney(custoPorKgCarcacaFria)} />
+              <PrintLine label="Rendimento industrial" value={brPercent(Number(calc?.aproveitamentoIndustrial || 0))} />
+            </div>
+          </div>
+
+          <div className="print-panel">
+            <div className="print-panel-heading">
+              <span>04</span>
+              <h2>Custo importado</h2>
+            </div>
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th className="text-right">Valor</th>
+                  <th className="text-right">Part.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costBreakdown.map((item, index) => (
+                  <tr key={item.item} className={index % 2 === 0 ? "print-zebra-row" : undefined}>
+                    <td>{item.item}</td>
+                    <td className="text-right">{brMoney(item.value)}</td>
+                    <td className="text-right">{brPercent(safeDiv(item.value, custoTotal) * 100)}</td>
+                  </tr>
+                ))}
+                <tr className="print-total-row">
+                  <td>Total importado</td>
+                  <td className="text-right">{brMoney(custoTotal)}</td>
+                  <td className="text-right">100,00%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="print-grid print-grid-2 print-grid-balance">
+          <div className="print-panel">
+            <div className="print-panel-heading">
+              <span>05</span>
+              <h2>Produção consolidada</h2>
+            </div>
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th>Grupo</th>
+                  <th className="text-right">Kg</th>
+                  <th className="text-right">Eq. @</th>
+                  <th className="text-right">Part. física</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="print-zebra-row">
+                  <td>Carnes</td>
+                  <td className="text-right">{brNumber(kgCarnes)} kg</td>
+                  <td className="text-right">{brNumber(kgCarnes / 15)} @</td>
+                  <td className="text-right">{brPercent(safeDiv(kgCarnes, kgTotal) * 100)}</td>
+                </tr>
+                <tr>
+                  <td>Miúdos {miudosDetalhados ? "detalhados" : "consolidados"}</td>
+                  <td className="text-right">{brNumber(kgMiudos)} kg</td>
+                  <td className="text-right">{brNumber(kgMiudos / 15)} @</td>
+                  <td className="text-right">{brPercent(safeDiv(kgMiudos, kgTotal) * 100)}</td>
+                </tr>
+                <tr className="print-total-row">
+                  <td>Total considerado</td>
+                  <td className="text-right">{brNumber(kgTotal)} kg</td>
+                  <td className="text-right">{brNumber(arrobasProducao)} @</td>
+                  <td className="text-right">100,00%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="print-panel">
+            <div className="print-panel-heading">
+              <span>06</span>
+              <h2>Produtos para conferência</h2>
+            </div>
+            <table className="print-table print-products-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Grupo</th>
+                  <th className="text-right">Kg</th>
+                  <th className="text-right">Part. física</th>
+                </tr>
+              </thead>
+              <tbody>
+                {produtos.map((produto, index) => (
+                  <tr key={`${produto.grupo}-${produto.nome}`} className={index % 2 === 0 ? "print-zebra-row" : undefined}>
+                    <td>{produto.nome}</td>
+                    <td>{produto.grupo}</td>
+                    <td className="text-right">{brNumber(produto.kg)} kg</td>
+                    <td className="text-right">{brPercent(safeDiv(produto.kg, kgTotal) * 100)}</td>
+                  </tr>
+                ))}
+                {produtos.length === 0 && (
+                  <tr>
+                    <td colSpan={4}>Nenhum produto importado para este lote.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="print-method-note">
+          <strong>Critério de projeção:</strong> compra do gado por @ usa carcaça quente. Retorno projetado por @ usa carcaça fria, após quebra. Valores por kg de produção usam somente produtos lançados no abate/miúdos.
+        </section>
+
+        <footer className="print-report-footer">
+          {INTERNAL_REPORT_SIGNATURE}
+        </footer>
+      </article>
+
+      <div className="panorama-screen mx-auto max-w-6xl space-y-5">
+        <header className="rounded-2xl bg-emerald-950 p-5 text-white shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-2xl font-black tracking-tight md:text-3xl">FRIGORÍFICO ELDORADO</div>
               <div className="mt-1 text-base font-black text-emerald-300">PANORAMA SIMPLES DO LOTE</div>
               <p className="mt-1 text-sm font-semibold text-emerald-100">
-                Custo do abate importado. Ajuste a margem e veja quanto o lote pode retornar.
+                Compra na carcaça quente. Retorno e programação pela carcaça fria e produção informada.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <a href="/" className="rounded-xl bg-white px-4 py-2 text-sm font-black text-emerald-950">
+              <Link href="/" className="rounded-xl bg-white px-4 py-2 text-sm font-black text-emerald-950">
                 Abate
-              </a>
-              <a href="/miudos" className="rounded-xl border border-white/25 px-4 py-2 text-sm font-black text-white">
+              </Link>
+              <Link href="/miudos" className="rounded-xl border border-white/25 px-4 py-2 text-sm font-black text-white">
                 Miúdos
-              </a>
+              </Link>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="rounded-xl border border-white/25 px-4 py-2 text-sm font-black text-white"
               >
                 Imprimir
@@ -301,7 +569,7 @@ export default function PrecificacaoPage() {
           </div>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:border-0 print:shadow-none">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr]">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-black uppercase tracking-wide text-slate-600">Lote</label>
@@ -320,30 +588,37 @@ export default function PrecificacaoPage() {
             </div>
 
             <DetailLine label="Data" value={formatDate(lote?.data)} />
-            <DetailLine label="Cabeças" value={brNumber(totalCabecas, 0)} />
+            <DetailLine label="@ compra quente" value={`${brNumber(arrobasCompra)} @`} />
+            <DetailLine label="@ retorno fria" value={`${brNumber(arrobasRetorno)} @`} />
           </div>
         </section>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Custo total do lote" value={brMoney(custoTotal)} dark />
-          <MetricCard label="Receita projetada" value={brMoney(receitaPrevista)} note={`Com ${brPercent(margemSobreCusto)} sobre custo`} />
-          <MetricCard label="Lucro previsto" value={brMoney(lucroPrevisto)} note={`Por cabeça: ${brMoney(lucroPorCabeca)}`} />
-          <MetricCard label="Preço médio necessário" value={`${brMoney(precoMedioNecessario)}/kg`} note={`Custo médio: ${brMoney(custoPorKg)}/kg`} />
+          <MetricCard label="Custo total do lote" value={brMoney(custoTotal)} note="Base importada do abate" dark />
+          <MetricCard label="Custo/@ compra quente" value={brMoney(custoPorArrobaCompra)} note={`Base: ${brNumber(arrobasCompra)} @`} />
+          <MetricCard label="Retorno/@ carcaça fria" value={brMoney(receitaPorArrobaRetorno)} note={`Base: ${brNumber(arrobasRetorno)} @`} />
+          <MetricCard label="Retorno / kg produção" value={`${brMoney(retornoPorKgProducao)}/kg`} note={`Base: ${brNumber(kgTotal)} kg informados`} />
         </section>
+
+        {producaoIncompleta && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-bold leading-relaxed text-amber-900">
+            Atenção: carnes não informadas no abate. A leitura por kg considera somente os miúdos/produtos lançados.
+          </div>
+        )}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
             <div>
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-emerald-950">Margem de lucro</h2>
+                  <h2 className="text-lg font-black text-emerald-950">Margem para projeção interna</h2>
                   <p className="mt-1 text-sm font-semibold text-slate-600">
-                    Informe uma margem sobre o custo do lote. O app projeta receita, lucro e preço médio necessário.
+                    Informe a margem sobre o custo. O sistema projeta retorno por @ fria e por kg informado.
                   </p>
                 </div>
                 <div className="w-full max-w-[220px]">
                   <NumberInput
-                    label="Margem"
+                    label="Margem sobre custo"
                     value={margemSobreCusto}
                     onChange={setMargem}
                     suffix="%"
@@ -378,6 +653,21 @@ export default function PrecificacaoPage() {
                 ))}
               </div>
 
+              <div className="mt-5 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-3">
+                <div>
+                  <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Custo/@ compra</span>
+                  <strong className="text-emerald-950">{brMoney(custoPorArrobaCompra)}</strong>
+                </div>
+                <div>
+                  <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Lucro/@ fria</span>
+                  <strong className="text-emerald-950">{brMoney(lucroPorArrobaRetorno)}</strong>
+                </div>
+                <div>
+                  <span className="block text-xs font-black uppercase tracking-wide text-slate-500">Retorno/@ fria</span>
+                  <strong className="text-emerald-950">{brMoney(receitaPorArrobaRetorno)}</strong>
+                </div>
+              </div>
+
               <div className="mt-6">
                 <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-wide text-slate-600">
                   <span>Cobertura do custo</span>
@@ -396,15 +686,20 @@ export default function PrecificacaoPage() {
             </div>
 
             <div className="rounded-2xl border border-emerald-950/10 bg-emerald-50 p-4">
-              <h3 className="text-sm font-black uppercase tracking-wide text-emerald-950">Leitura direta</h3>
+              <h3 className="text-sm font-black uppercase tracking-wide text-emerald-950">Leitura por arroba</h3>
               <div className="mt-3 space-y-1">
-                <DetailLine label="Custo por cabeça" value={brMoney(custoPorCabeca)} />
-                <DetailLine label="Receita por cabeça" value={brMoney(receitaPorCabeca)} />
-                <DetailLine label="Lucro por cabeça" value={brMoney(lucroPorCabeca)} />
+                <DetailLine label="@ compra — quente" value={`${brNumber(arrobasCompra)} @`} />
+                <DetailLine label="Custo/@ compra" value={brMoney(custoPorArrobaCompra)} />
+                <DetailLine label="@ retorno — fria" value={`${brNumber(arrobasRetorno)} @`} />
+                <DetailLine label="Retorno/@ fria" value={brMoney(receitaPorArrobaRetorno)} />
+                <DetailLine label="Lucro/@ fria" value={brMoney(lucroPorArrobaRetorno)} />
+                <DetailLine label="Cada 1% de margem" value={`${brMoney(valorPorPontoArroba)} / @ fria`} />
                 <DetailLine label="Margem na venda" value={brPercent(margemNaVenda)} />
+                <DetailLine label="Retorno/kg carcaça fria" value={`${brMoney(retornoPorKgCarcacaFria)} / kg`} />
+                <DetailLine label="Retorno/kg produção" value={`${brMoney(retornoPorKgProducao)} / kg`} />
               </div>
               <div className="mt-4 rounded-xl bg-white p-3 text-sm font-bold leading-relaxed text-slate-700">
-                Com esta margem, o lote precisa retornar <strong>{brMoney(receitaPrevista)}</strong>. A sobra projetada sobre o custo é <strong>{brMoney(lucroPrevisto)}</strong>.
+                Compra é conferida na carcaça quente. Retorno e sobra são projetados na carcaça fria: <strong>{brMoney(receitaPorArrobaRetorno)}/@</strong>, totalizando <strong>{brMoney(lucroPrevisto)}</strong> de sobra.
               </div>
             </div>
           </div>
@@ -412,13 +707,22 @@ export default function PrecificacaoPage() {
 
         <section className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-black text-emerald-950">Base importada do abate</h2>
+            <h2 className="text-lg font-black text-emerald-950">Base do lote e produção informada</h2>
             <div className="mt-3 grid gap-1">
+              <DetailLine label="@ compra — carcaça quente" value={`${brNumber(arrobasCompra)} @`} />
+              <DetailLine label="@ retorno — carcaça fria" value={`${brNumber(arrobasRetorno)} @`} />
+              <DetailLine label="Base carcaça quente" value={`${brNumber(kgCarcacaQuente)} kg`} />
+              <DetailLine label="Base carcaça fria" value={`${brNumber(kgCarcacaFria)} kg`} />
               <DetailLine label="Produção total considerada" value={`${brNumber(kgTotal)} kg`} />
+              <DetailLine label="Produção equivalente" value={`${brNumber(arrobasProducao)} @`} />
               <DetailLine label="Carnes" value={`${brNumber(kgCarnes)} kg`} />
               <DetailLine label="Miúdos" value={`${brNumber(kgMiudos)} kg`} />
-              <DetailLine label="Custo por arroba" value={brMoney(Number(calc?.custoPorArroba || 0))} />
-              <DetailLine label="Custo por kg produzido" value={brMoney(custoPorKg)} />
+              <DetailLine label="Custo/@ compra quente" value={brMoney(custoPorArrobaCompra)} />
+              <DetailLine label="Retorno/@ carcaça fria" value={brMoney(receitaPorArrobaRetorno)} />
+              <DetailLine label="Lucro/@ carcaça fria" value={brMoney(lucroPorArrobaRetorno)} />
+              <DetailLine label="Custo/kg produção informada" value={brMoney(custoPorKgProducao)} />
+              <DetailLine label="Custo/kg carcaça quente" value={brMoney(custoPorKgCarcacaQuente)} />
+              <DetailLine label="Custo/kg carcaça fria" value={brMoney(custoPorKgCarcacaFria)} />
               <DetailLine label="Rendimento industrial" value={brPercent(Number(calc?.aproveitamentoIndustrial || 0))} />
             </div>
           </div>
@@ -426,11 +730,9 @@ export default function PrecificacaoPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black text-emerald-950">Custo importado</h2>
             <div className="mt-3 grid gap-1">
-              <DetailLine label="Gado considerado" value={brMoney(Number(calc?.custoGadoConsiderado || 0))} />
-              <DetailLine label="Frete" value={brMoney(Number(lote?.frete || 0))} />
-              <DetailLine label="Custo adicional/cabeça" value={brMoney(Number(calc?.custoCabecasAdicional || 0))} />
-              <DetailLine label="Folha aplicada" value={brMoney(Number(calc?.folhaAbateAplicada || 0))} />
-              <DetailLine label="Taxas + outros" value={brMoney(Number(lote?.taxas || 0) + Number(lote?.outrosCustos || 0))} />
+              {costBreakdown.map((item) => (
+                <DetailLine key={item.item} label={item.item} value={brMoney(item.value)} />
+              ))}
             </div>
           </div>
         </section>

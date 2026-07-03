@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import SummaryCards from "./components/SummaryCards";
 import Section from "./components/Section";
@@ -52,6 +54,9 @@ const initialState: LoteData = {
 
   observacoes: "",
 };
+
+let abateDraftCache: LoteData | null = null;
+let abateSelectedLotCache = "";
 
 function brMoney(value: number) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -111,6 +116,19 @@ function editBrazilianNumber(value: number, decimals = 2) {
   return Number(value || 0).toLocaleString("pt-BR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
+  });
+}
+
+function hasMeaningfulDraft(data: LoteData) {
+  return (Object.keys(initialState) as (keyof LoteData)[]).some((key) => {
+    const value = data[key];
+    const initial = initialState[key];
+
+    if (typeof initial === "number") {
+      return Number(value || 0) !== Number(initial || 0);
+    }
+
+    return String(value || "").trim() !== String(initial || "").trim();
   });
 }
 
@@ -280,11 +298,16 @@ function ResultLine({ label, value }: { label: string; value: string }) {
 }
 
 export default function Home() {
-  const [form, setForm] = useState<LoteData>(initialState);
+  const router = useRouter();
+  const [form, setForm] = useState<LoteData>(() => ({
+    ...initialState,
+    ...(abateDraftCache || {}),
+  }));
   const [savedLots, setSavedLots] = useState<LoteData[]>([]);
-  const [selectedLot, setSelectedLot] = useState("");
+  const [selectedLot, setSelectedLot] = useState(() => abateSelectedLotCache);
 
   const calc = useMemo(() => calculate(form), [form]);
+  const hasDraft = useMemo(() => hasMeaningfulDraft(form), [form]);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -297,6 +320,26 @@ export default function Home() {
       setSavedLots([]);
     }
   }, []);
+
+  useEffect(() => {
+    abateDraftCache = form;
+  }, [form]);
+
+  useEffect(() => {
+    abateSelectedLotCache = selectedLot;
+  }, [selectedLot]);
+
+  useEffect(() => {
+    if (!hasDraft) return;
+
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasDraft]);
 
   function update<K extends keyof LoteData>(key: K, value: LoteData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -336,19 +379,20 @@ export default function Home() {
     setSelectedLot("");
   }
 
-  function processarMiudos() {
-    saveCurrentLot();
-    window.location.href = "/miudos";
+  function clearDraft() {
+    if (hasDraft && !window.confirm("Limpar os dados preenchidos do abate?")) return;
+    abateDraftCache = null;
+    abateSelectedLotCache = "";
+    setForm({ ...initialState });
+    setSelectedLot("");
   }
 
-  const produtosForm = [
-    { indiceKey: "indiceTraseiro" as const },
-    { indiceKey: "indiceTraseiroCapoteBoi" as const },
-    { indiceKey: "indiceTraseiroCapoteVaca" as const },
-    { indiceKey: "indiceDianteiro" as const },
-    { indiceKey: "indicePonta" as const },
-    { indiceKey: "indiceMiudos" as const },
-  ];
+  function processarMiudos() {
+    saveCurrentLot();
+    router.push("/miudos");
+  }
+
+  const producaoCarnes = calc.producaoTotal - calc.producaoMiudos;
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-900 print:bg-white print:p-0">
@@ -365,36 +409,44 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <a
+              <Link
                 href="/quebra"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-950 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-900"
               >
                 Quebras
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/precificacao"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-950 transition hover:border-emerald-950/40 hover:bg-emerald-100"
               >
                 Panorama
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/relatorios"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-950 transition hover:border-emerald-950/40 hover:bg-emerald-100"
               >
                 Relatórios
-              </a>
+              </Link>
             </div>
           </div>
         </header>
 
+        {hasDraft && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+            Os dados preenchidos ficam mantidos ao navegar pelo sistema. Se atualizar a página, o navegador avisará que os dados não salvos podem ser perdidos.
+          </div>
+        )}
+
         <SummaryCards
           cards={[
-            { title: "Cabeças abatidas", value: String(calc.totalCabecas) },
-            { title: "Carcaça total", value: `${brNumber(calc.carcacaQuenteTotal)} kg` },
-            { title: "Peso médio", value: `${brNumber(calc.pesoMedioGeral)} kg` },
-            { title: "Quebra estimada", value: brPercent(form.quebraPercentual) },
+            { title: "Custo total", value: brMoney(calc.custoTotal) },
+            { title: "Custo/cabeça", value: brMoney(calc.custoPorCabeca) },
+            { title: "Custo/@ compra quente", value: brMoney(calc.custoPorArrobaQuente) },
+            { title: "Custo/@ retorno fria", value: brMoney(calc.custoPorArrobaFria) },
+            { title: "Cabeças", value: String(calc.totalCabecas) },
+            { title: "Produção informada", value: `${brNumber(calc.producaoTotal)} kg` },
           ]}
         />
 
@@ -402,6 +454,35 @@ export default function Home() {
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Data" type="date" value={form.data} onChange={(v) => update("data", v)} />
             <Field label="Número do lote" value={form.numeroLote} onChange={(v) => update("numeroLote", v)} />
+          </div>
+        </Section>
+
+        <Section title="Custos do Abate">
+          <div className="grid gap-3 md:grid-cols-3">
+            <MoneyInput label="Valor total do gado" value={form.valorGado} onChange={(v) => update("valorGado", v)} />
+            <MoneyInput label="Preço @ boi (quente)" value={form.precoArrobaBoi} onChange={(v) => update("precoArrobaBoi", v)} />
+            <MoneyInput label="Preço @ vaca (quente)" value={form.precoArrobaVaca} onChange={(v) => update("precoArrobaVaca", v)} />
+            <MoneyInput label="Frete" value={form.frete} onChange={(v) => update("frete", v)} />
+            <MoneyInput label="Taxas" value={form.taxas} onChange={(v) => update("taxas", v)} />
+            <MoneyInput label="Outros custos" value={form.outrosCustos} onChange={(v) => update("outrosCustos", v)} />
+            <MoneyInput label="Custo adicional por cabeça" value={form.custoPorCabecaAdicional} onChange={(v) => update("custoPorCabecaAdicional", v)} />
+            <MoneyInput label="Folha do abate mensal" value={form.folhaAbateMensal} onChange={(v) => update("folhaAbateMensal", v)} />
+            <NumericInput label="Dias de abate no mês" value={form.diasAbateMes} integer onChange={(v) => update("diasAbateMes", v)} />
+          </div>
+
+          <div className="mt-4 rounded-xl border border-emerald-950/20 bg-emerald-50 p-3 text-sm font-semibold leading-relaxed text-emerald-950">
+            Preço @ boi/vaca usa carcaça quente, que é a base de compra. A carcaça fria fica para retorno e planejamento depois da quebra.
+          </div>
+        </Section>
+
+        <Section title="Fechamento de Custos">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <SmallCard label="Custo do gado" value={brMoney(calc.custoGadoConsiderado)} />
+            <SmallCard label="Custo adicional total" value={brMoney(calc.custoCabecasAdicional)} />
+            <SmallCard label="Folha aplicada" value={brMoney(calc.folhaAbateAplicada)} />
+            <SmallCard label="Custo total do lote" value={brMoney(calc.custoTotal)} />
+            <SmallCard label="Custo total / cabeça" value={brMoney(calc.custoPorCabeca)} />
+            <SmallCard label="Custo / @ compra quente" value={brMoney(calc.custoPorArrobaQuente)} />
           </div>
         </Section>
 
@@ -433,6 +514,17 @@ export default function Home() {
           </div>
         </Section>
 
+        <Section title="Base de Compra — Carcaça Quente">
+          <div className="grid gap-3 md:grid-cols-6">
+            <SmallCard label="Carcaça quente" value={`${brNumber(calc.carcacaQuenteTotal)} kg`} />
+            <SmallCard label="@ quente boi" value={`${brNumber(calc.arrobasQuenteBoi)} @`} />
+            <SmallCard label="@ quente vaca" value={`${brNumber(calc.arrobasQuenteVaca)} @`} />
+            <SmallCard label="@ quente total" value={`${brNumber(calc.arrobasQuenteTotal)} @`} />
+            <SmallCard label="Custo/@ compra" value={brMoney(calc.custoPorArrobaQuente)} />
+            <SmallCard label="Custo/kg quente" value={brMoney(calc.custoPorKgCarcacaQuente)} />
+          </div>
+        </Section>
+
         <Section title="Quebra de Frio">
           <div className="grid gap-3 md:grid-cols-3">
             <SmallCard label="Carcaça quente total" value={`${brNumber(calc.carcacaQuenteTotal)} kg`} />
@@ -441,15 +533,15 @@ export default function Home() {
           </div>
         </Section>
 
-        <Section title="Arrobas">
+        <Section title="Base de Retorno — Carcaça Fria">
           <div className="grid gap-3 md:grid-cols-7">
-            <SmallCard label="Arrobas bois" value={brNumber(calc.arrobasBoi)} />
-            <SmallCard label="Arrobas vacas" value={brNumber(calc.arrobasVaca)} />
-            <SmallCard label="Arrobas totais" value={brNumber(calc.arrobasTotal)} />
-            <SmallCard label="Média @ boi" value={brNumber(calc.mediaArrobaBoi)} />
-            <SmallCard label="Média @ vaca" value={brNumber(calc.mediaArrobaVaca)} />
-            <SmallCard label="Média @ geral" value={brNumber(calc.mediaArrobaGeral)} />
-            <SmallCard label="Custo/@" value={brMoney(calc.custoPorArroba)} />
+            <SmallCard label="Carcaça fria" value={`${brNumber(calc.carcacaFriaTotal)} kg`} />
+            <SmallCard label="@ fria boi" value={`${brNumber(calc.arrobasFriaBoi)} @`} />
+            <SmallCard label="@ fria vaca" value={`${brNumber(calc.arrobasFriaVaca)} @`} />
+            <SmallCard label="@ fria total" value={`${brNumber(calc.arrobasFriaTotal)} @`} />
+            <SmallCard label="Média @ fria/cabeça" value={brNumber(calc.mediaArrobaFriaGeral)} />
+            <SmallCard label="Custo/@ retorno" value={brMoney(calc.custoPorArrobaFria)} />
+            <SmallCard label="Custo/kg fria" value={brMoney(calc.custoPorKgCarcacaFria)} />
           </div>
         </Section>
 
@@ -479,6 +571,7 @@ export default function Home() {
               <ResultLine label="Capote de vaca" value={`${brNumber(calc.producaoTraseiroCapoteVaca)} kg`} />
               <ResultLine label="Dianteiro total" value={`${brNumber(calc.producaoDianteiro)} kg`} />
               <ResultLine label="Ponta total" value={`${brNumber(calc.producaoPonta)} kg`} />
+              <ResultLine label="Produção carnes" value={`${brNumber(producaoCarnes)} kg`} />
               <ResultLine label="Produção total" value={`${brNumber(calc.producaoTotal)} kg`} />
             </div>
           </div>
@@ -537,36 +630,13 @@ export default function Home() {
           </div>
         </Section>
 
-        <Section title="Custos">
-          <div className="grid gap-3 md:grid-cols-3">
-            <MoneyInput label="Valor total do gado" value={form.valorGado} onChange={(v) => update("valorGado", v)} />
-            <MoneyInput label="Preço @ boi" value={form.precoArrobaBoi} onChange={(v) => update("precoArrobaBoi", v)} />
-            <MoneyInput label="Preço @ vaca" value={form.precoArrobaVaca} onChange={(v) => update("precoArrobaVaca", v)} />
-            <MoneyInput label="Frete" value={form.frete} onChange={(v) => update("frete", v)} />
-            <MoneyInput label="Taxas" value={form.taxas} onChange={(v) => update("taxas", v)} />
-            <MoneyInput label="Outros custos" value={form.outrosCustos} onChange={(v) => update("outrosCustos", v)} />
-            <MoneyInput label="Custo por cabeça" value={form.custoPorCabecaAdicional} onChange={(v) => update("custoPorCabecaAdicional", v)} />
-            <MoneyInput label="Folha do abate mensal" value={form.folhaAbateMensal} onChange={(v) => update("folhaAbateMensal", v)} />
-            <NumericInput label="Dias de abate no mês" value={form.diasAbateMes} integer onChange={(v) => update("diasAbateMes", v)} />
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            <SmallCard label="Custo do gado" value={brMoney(calc.custoGadoConsiderado)} />
-            <SmallCard label="Custo total do lote" value={brMoney(calc.custoTotal)} />
-            <SmallCard label="Custo total / cabeça" value={brMoney(calc.custoPorCabeca)} />
-            <SmallCard label="Folha / cabeça" value={brMoney(calc.folhaAbatePorCabeca)} />
-            <SmallCard label="Custo por arroba" value={brMoney(calc.custoPorArroba)} />
-            <SmallCard label="Custo por kg produzido" value={brMoney(calc.custoPorKg)} />
-          </div>
-        </Section>
-
-        <Section title="Rateio de Custos">
+        <Section title="Rateio de Custos por Produto">
           <div className="mb-4 rounded-xl border border-emerald-950/20 bg-emerald-50 p-3 text-sm font-semibold text-emerald-950">
-            Este bloco distribui o custo do lote entre os cortes de carcaça. Valores comerciais ficam fora deste projeto.
+            Este bloco distribui o custo do lote entre todos os produtos informados na produção. Não define preço de venda; serve para base interna de PCP.
           </div>
 
           <div className="overflow-x-auto rounded-xl border">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
+            <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead>
                 <tr className="bg-emerald-950 text-white">
                   <th className="p-3 text-left">Produto</th>
@@ -578,25 +648,21 @@ export default function Home() {
               </thead>
 
               <tbody>
-                {calc.produtosCalculados.map((produto, index) => {
-                  const formProduto = produtosForm[index];
-
-                  return (
-                    <tr key={produto.nome} className="border-b border-slate-200 bg-white">
-                      <td className="p-3 font-black text-emerald-950">{produto.nome}</td>
-                      <td className="p-3 text-right font-bold">{brNumber(produto.peso)} kg</td>
-                      <td className="p-2">
-                        <NumericInput
-                          label=""
-                          value={form[formProduto.indiceKey]}
-                          onChange={(v) => update(formProduto.indiceKey, v)}
-                        />
-                      </td>
-                      <td className="p-3 text-right font-bold">{brMoney(produto.custoDistribuido)}</td>
-                      <td className="p-3 text-right font-bold">{brMoney(produto.custoKg)}</td>
-                    </tr>
-                  );
-                })}
+                {calc.produtosCalculados.map((produto) => (
+                  <tr key={produto.nome} className="border-b border-slate-200 bg-white">
+                    <td className="p-3 font-black text-emerald-950">{produto.nome}</td>
+                    <td className="p-3 text-right font-bold">{brNumber(produto.peso)} kg</td>
+                    <td className="p-2">
+                      <NumericInput
+                        label=""
+                        value={form[produto.indiceKey]}
+                        onChange={(v) => update(produto.indiceKey, v)}
+                      />
+                    </td>
+                    <td className="p-3 text-right font-bold">{brMoney(produto.custoDistribuido)}</td>
+                    <td className="p-3 text-right font-bold">{brMoney(produto.custoKg)}</td>
+                  </tr>
+                ))}
 
                 <tr className="bg-emerald-950 text-white">
                   <td className="p-3 font-black">TOTAL</td>
@@ -621,12 +687,19 @@ export default function Home() {
         </Section>
 
         <Section title="Ações do Lote">
-          <div className="grid gap-3 lg:grid-cols-[1fr_2fr_0.75fr_0.75fr_1fr]">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_2fr_0.75fr_0.75fr_1fr]">
             <button
               onClick={saveCurrentLot}
               className="rounded-xl bg-emerald-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-900"
             >
               Salvar lote
+            </button>
+
+            <button
+              onClick={clearDraft}
+              className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:border-red-400"
+            >
+              Limpar preenchimento
             </button>
 
             <select

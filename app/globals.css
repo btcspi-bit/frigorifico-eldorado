@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "Courier New", Courier, monospace;
 }
 
 @theme inline {
@@ -241,5 +243,712 @@ body {
 
   .quebra-report .report-metric div:nth-child(2) {
     font-size: 14px !important;
+  }
+}
+
+.panorama-print-report {
+  display: none;
+}
+
+@media print {
+  .panorama-screen {
+    display: none !important;
+  }
+
+  .panorama-print-report {
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    color: #111827 !important;
+    display: block !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 9.5px !important;
+    min-height: 297mm !important;
+    padding: 9mm !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    width: 100% !important;
+  }
+
+  .panorama-print-report * {
+    box-sizing: border-box !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print-report-header {
+    align-items: flex-start !important;
+    border-bottom: 2px solid #064e3b !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .print-report-header h1 {
+    color: #064e3b !important;
+    font-size: 21px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+
+  .print-report-header p {
+    color: #0f766e !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    margin: 3px 0 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-report-meta {
+    color: #334155 !important;
+    display: grid !important;
+    font-size: 8.5px !important;
+    gap: 2px !important;
+    line-height: 1.3 !important;
+    min-width: 180px !important;
+    text-align: right !important;
+  }
+
+  .print-kpi-grid {
+    display: grid !important;
+    gap: 6px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    margin-bottom: 8px !important;
+  }
+
+  .print-kpi {
+    border: 1px solid #cbd5e1 !important;
+    border-left: 4px solid #064e3b !important;
+    border-radius: 5px !important;
+    min-height: 48px !important;
+    padding: 6px 7px !important;
+  }
+
+  .print-kpi span {
+    color: #475569 !important;
+    display: block !important;
+    font-size: 7.5px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    line-height: 1.2 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-kpi strong {
+    color: #064e3b !important;
+    display: block !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    margin-top: 3px !important;
+  }
+
+  .print-kpi small {
+    color: #334155 !important;
+    display: block !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
+  }
+
+  .print-executive-note {
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+    border-radius: 6px !important;
+    color: #064e3b !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    margin-bottom: 8px !important;
+    padding: 7px 8px !important;
+  }
+
+  .print-section {
+    break-inside: avoid !important;
+    margin-bottom: 8px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-section h2 {
+    border-bottom: 1px solid #064e3b !important;
+    color: #064e3b !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1.2 !important;
+    margin: 0 0 5px !important;
+    padding-bottom: 3px !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-two-columns {
+    display: grid !important;
+    gap: 8px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .print-two-columns > div {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 7px 8px !important;
+  }
+
+  .print-line {
+    align-items: center !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: space-between !important;
+    min-height: 18px !important;
+    padding: 3px 0 !important;
+  }
+
+  .print-line:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .print-line span {
+    color: #475569 !important;
+    font-weight: 700 !important;
+  }
+
+  .print-line strong {
+    color: #111827 !important;
+    font-weight: 900 !important;
+    text-align: right !important;
+  }
+
+  .panorama-print-report table {
+    border-collapse: collapse !important;
+    font-size: 8.5px !important;
+    line-height: 1.25 !important;
+    width: 100% !important;
+  }
+
+  .panorama-print-report thead tr {
+    background: #064e3b !important;
+    color: #ffffff !important;
+  }
+
+  .panorama-print-report th,
+  .panorama-print-report td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 4px 5px !important;
+    vertical-align: middle !important;
+  }
+
+  .panorama-print-report th {
+    font-weight: 900 !important;
+    text-align: left !important;
+  }
+
+  .panorama-print-report .text-right {
+    text-align: right !important;
+  }
+
+  .panorama-print-report tbody tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-total-row {
+    background: #f1f5f9 !important;
+    color: #064e3b !important;
+    font-weight: 900 !important;
+  }
+
+  .print-report-footer {
+    border-top: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    margin-top: 8px !important;
+    padding-top: 5px !important;
+    text-align: center !important;
+  }
+}
+
+/* Panorama comercial do lote — versão de impressão operacional/premium */
+.panorama-print-report {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .panorama-screen {
+    display: none !important;
+  }
+
+  .panorama-print-report {
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    color: #111827 !important;
+    display: block !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 8.6px !important;
+    line-height: 1.35 !important;
+    min-height: 297mm !important;
+    padding: 8mm !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    width: 210mm !important;
+  }
+
+  .panorama-print-report * {
+    box-sizing: border-box !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .print-master-header {
+    align-items: stretch !important;
+    border-bottom: 2.2px solid #063b2c !important;
+    display: grid !important;
+    gap: 8px !important;
+    grid-template-columns: 1.25fr 0.75fr !important;
+    margin-bottom: 7px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .print-brand-eyebrow {
+    color: #063b2c !important;
+    font-size: 8.5px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.18em !important;
+    line-height: 1 !important;
+    margin-bottom: 3px !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-brand-block h1 {
+    color: #0b1f18 !important;
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.035em !important;
+    line-height: 0.98 !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-brand-block p {
+    color: #475569 !important;
+    font-size: 8.7px !important;
+    font-weight: 700 !important;
+    margin: 4px 0 0 !important;
+  }
+
+  .print-document-meta {
+    align-content: stretch !important;
+    display: grid !important;
+    gap: 3px !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .print-document-meta > div {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 3px solid #063b2c !important;
+    border-radius: 5px !important;
+    display: grid !important;
+    gap: 1px !important;
+    padding: 4px 6px !important;
+  }
+
+  .print-document-meta span {
+    color: #64748b !important;
+    font-size: 6.8px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    line-height: 1.05 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-document-meta strong {
+    color: #111827 !important;
+    font-size: 8.2px !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+  }
+
+  .print-executive-kpis {
+    display: grid !important;
+    gap: 5px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    margin-bottom: 6px !important;
+  }
+
+  .panorama-print-report .print-kpi {
+    background: #f8faf9 !important;
+    border: 1px solid #d7dfdc !important;
+    border-left: 4px solid #063b2c !important;
+    border-radius: 7px !important;
+    min-height: 42px !important;
+    padding: 5px 6px !important;
+  }
+
+  .panorama-print-report .print-kpi span {
+    color: #475569 !important;
+    display: block !important;
+    font-size: 6.8px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.15 !important;
+    text-transform: uppercase !important;
+  }
+
+  .panorama-print-report .print-kpi strong {
+    color: #063b2c !important;
+    display: block !important;
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1 !important;
+    margin-top: 3px !important;
+  }
+
+  .panorama-print-report .print-kpi small {
+    color: #334155 !important;
+    display: block !important;
+    font-size: 7.3px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+  }
+
+  .print-executive-band {
+    align-items: center !important;
+    background: linear-gradient(90deg, #063b2c 0%, #0f513f 100%) !important;
+    border-radius: 7px !important;
+    color: #ffffff !important;
+    display: grid !important;
+    gap: 8px !important;
+    grid-template-columns: 1fr 0.28fr !important;
+    margin-bottom: 6px !important;
+    padding: 7px 8px !important;
+  }
+
+  .print-section-label {
+    color: #a7f3d0 !important;
+    display: block !important;
+    font-size: 6.8px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.12em !important;
+    margin-bottom: 2px !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-executive-band p {
+    color: #ffffff !important;
+    font-size: 8.2px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+  }
+
+  .print-executive-band strong {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+  }
+
+  .print-highlight-total {
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    border-radius: 6px !important;
+    padding: 5px 6px !important;
+    text-align: right !important;
+  }
+
+  .print-highlight-total span {
+    color: #d1fae5 !important;
+    display: block !important;
+    font-size: 6.6px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-highlight-total strong {
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    margin-top: 3px !important;
+  }
+
+  .print-grid {
+    display: grid !important;
+    gap: 6px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .print-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .print-panel {
+    background: #ffffff !important;
+    border: 1px solid #d7dfdc !important;
+    border-radius: 7px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    padding: 7px !important;
+  }
+
+  .print-panel-soft {
+    background: #f8faf9 !important;
+  }
+
+  .print-panel-heading {
+    align-items: center !important;
+    border-bottom: 1px solid #d7dfdc !important;
+    display: flex !important;
+    gap: 6px !important;
+    margin-bottom: 5px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .print-panel-heading span {
+    align-items: center !important;
+    background: #063b2c !important;
+    border-radius: 999px !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    font-size: 6.4px !important;
+    font-weight: 900 !important;
+    height: 16px !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    min-width: 16px !important;
+    width: 16px !important;
+  }
+
+  .print-panel-heading h2 {
+    color: #063b2c !important;
+    font-size: 9.2px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-margin-layout {
+    display: grid !important;
+    gap: 6px !important;
+    grid-template-columns: 0.42fr 0.58fr !important;
+  }
+
+  .print-margin-badge {
+    background: #063b2c !important;
+    border-radius: 7px !important;
+    color: #ffffff !important;
+    display: grid !important;
+    gap: 2px !important;
+    padding: 7px !important;
+  }
+
+  .print-margin-badge span {
+    color: #a7f3d0 !important;
+    font-size: 6.6px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-margin-badge strong {
+    color: #ffffff !important;
+    font-size: 19px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1 !important;
+  }
+
+  .print-margin-badge small {
+    color: #d1fae5 !important;
+    font-size: 7px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+  }
+
+  .print-margin-lines,
+  .print-lines-block {
+    display: grid !important;
+    gap: 0 !important;
+  }
+
+  .panorama-print-report .print-line {
+    align-items: center !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    display: flex !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
+    min-height: 18px !important;
+    padding: 3px 0 !important;
+  }
+
+  .panorama-print-report .print-line:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .panorama-print-report .print-line span {
+    color: #475569 !important;
+    font-size: 7.4px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+  }
+
+  .panorama-print-report .print-line strong {
+    color: #111827 !important;
+    font-size: 7.9px !important;
+    font-weight: 900 !important;
+    line-height: 1.2 !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .print-progress-wrapper {
+    margin-top: 6px !important;
+  }
+
+  .print-progress-labels {
+    color: #64748b !important;
+    display: flex !important;
+    font-size: 6.5px !important;
+    font-weight: 900 !important;
+    justify-content: space-between !important;
+    margin-bottom: 2px !important;
+  }
+
+  .print-progress-track {
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 999px !important;
+    height: 9px !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .print-progress-fill {
+    background: #063b2c !important;
+    border-radius: 999px !important;
+    height: 100% !important;
+    left: 0 !important;
+    max-width: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+  }
+
+  .print-progress-marker {
+    background: #ffffff !important;
+    box-shadow: 0 0 0 1px #063b2c !important;
+    height: 100% !important;
+    left: 66.666% !important;
+    position: absolute !important;
+    top: 0 !important;
+    width: 2px !important;
+  }
+
+  .panorama-print-report .print-table {
+    border-collapse: collapse !important;
+    font-size: 7.35px !important;
+    line-height: 1.2 !important;
+    width: 100% !important;
+  }
+
+  .panorama-print-report .print-table th,
+  .panorama-print-report .print-table td {
+    border: 1px solid #d7dfdc !important;
+    padding: 3.4px 4px !important;
+    vertical-align: middle !important;
+  }
+
+  .panorama-print-report .print-table th {
+    background: #063b2c !important;
+    color: #ffffff !important;
+    font-size: 6.7px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  .panorama-print-report .print-table td {
+    color: #111827 !important;
+    font-weight: 700 !important;
+  }
+
+  .panorama-print-report .print-table .text-right,
+  .panorama-print-report .text-right {
+    text-align: right !important;
+  }
+
+  .print-zebra-row {
+    background: #f8fafc !important;
+  }
+
+  .panorama-print-report .print-total-row {
+    background: #e8f3ee !important;
+    color: #063b2c !important;
+    font-weight: 900 !important;
+  }
+
+  .panorama-print-report .print-total-row td {
+    color: #063b2c !important;
+    font-weight: 900 !important;
+  }
+
+  .print-products-table {
+    font-size: 7px !important;
+  }
+
+  .print-method-note {
+    background: #f8fafc !important;
+    border: 1px solid #d7dfdc !important;
+    border-radius: 7px !important;
+    color: #334155 !important;
+    font-size: 7.4px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    margin-bottom: 6px !important;
+    padding: 5px 7px !important;
+  }
+
+  .print-method-note strong {
+    color: #063b2c !important;
+    font-weight: 900 !important;
+  }
+
+  .panorama-print-report .print-report-footer {
+    border-top: 1.5px solid #063b2c !important;
+    color: #063b2c !important;
+    font-size: 7.2px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.12em !important;
+    line-height: 1.25 !important;
+    margin-top: 7px !important;
+    padding-top: 5px !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
   }
 }
