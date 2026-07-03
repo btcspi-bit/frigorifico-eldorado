@@ -389,6 +389,13 @@ export default function MiudosPage() {
               >
                 Calculadora de Quebra
               </a>
+
+              <a
+                href="/precificacao"
+                className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/20"
+              >
+                Panorama
+              </a>
             </div>
           </div>
         </header>

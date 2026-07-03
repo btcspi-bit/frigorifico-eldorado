@@ -369,7 +369,14 @@ export default function Home() {
                 href="/quebra"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-950 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-900"
               >
-                Calculadora de Quebra
+                Quebras
+              </a>
+
+              <a
+                href="/precificacao"
+                className="inline-flex items-center justify-center rounded-xl border border-emerald-950/20 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-950 transition hover:border-emerald-950/40 hover:bg-emerald-100"
+              >
+                Panorama
               </a>
 
               <a
